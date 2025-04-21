@@ -1,0 +1,198 @@
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import AdminLayout from '@/layouts/AdminLayout';
+import { Transition } from '@headlessui/react';
+import KeyIcon from '@heroicons/react/24/outline/KeyIcon.js';
+import UserCircleIcon from '@heroicons/react/24/outline/UserCircleIcon.js';
+import UserIcon from '@heroicons/react/24/outline/UserIcon.js';
+import { Head, useForm, usePage } from '@inertiajs/react';
+import { FormEventHandler, useState } from 'react';
+
+export default function Profile() {
+    const { auth } = usePage().props;
+    const [currentSection, setCurrentSection] = useState('profile');
+
+    const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
+        name: auth.user.name,
+        email: auth.user.email,
+    });
+
+    const {
+        data: passwordData,
+        setData: setPasswordData,
+        reset: resetPasswordData,
+        patch: patchPassword,
+        errors: passwordErrors,
+        processing: passwordProcessing,
+        recentlySuccessful: passwordRecentlySuccessful,
+    } = useForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    });
+
+    const updateProfile: FormEventHandler = (e) => {
+        e.preventDefault();
+
+        patch(route('admin.profile.update'), {
+            preserveScroll: true,
+        });
+    };
+
+    const updatePassword: FormEventHandler = (e) => {
+        e.preventDefault();
+
+        patchPassword(route('admin.profile.update-password'), {
+            preserveScroll: true,
+            onSuccess: () => resetPasswordData(),
+        });
+    };
+
+    return (
+        <AdminLayout title="My Profile" subtitle="Manage your account information">
+            <Head title="Admin Profile" />
+
+            <div className="flex flex-col gap-6 md:flex-row">
+                {/* Sidebar Navigation */}
+                <div className="w-full md:w-64">
+                    <Card className="p-4">
+                        <div className="flex flex-col space-y-1">
+                            <Button
+                                variant={currentSection === 'profile' ? 'default' : 'ghost'}
+                                className="justify-start"
+                                onClick={() => setCurrentSection('profile')}
+                            >
+                                <UserIcon className="mr-2 h-5 w-5" />
+                                Profile Information
+                            </Button>
+                            <Button
+                                variant={currentSection === 'password' ? 'default' : 'ghost'}
+                                className="justify-start"
+                                onClick={() => setCurrentSection('password')}
+                            >
+                                <KeyIcon className="mr-2 h-5 w-5" />
+                                Change Password
+                            </Button>
+                        </div>
+                    </Card>
+                </div>
+
+                {/* Main Content */}
+                <div className="flex-1">
+                    {currentSection === 'profile' && (
+                        <Card className="p-6">
+                            <div className="mb-6 flex items-center">
+                                <div className="flex-shrink-0">
+                                    <div className="bg-primary/10 border-primary flex h-20 w-20 items-center justify-center rounded-full border text-center">
+                                        <UserCircleIcon className="text-primary h-12 w-12" />
+                                    </div>
+                                </div>
+                                <div className="ml-4">
+                                    <h3 className="text-lg font-semibold">{data.name}</h3>
+                                    <p className="text-muted-foreground">{data.email}</p>
+                                    <p className="text-muted-foreground mt-1 text-sm">Administrator</p>
+                                </div>
+                            </div>
+
+                            <form onSubmit={updateProfile} className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="name">Name</Label>
+                                    <Input id="name" value={data.name} onChange={(e) => setData('name', e.target.value)} required />
+                                    {errors.name && <p className="text-destructive mt-1 text-sm">{errors.name}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="email">Email</Label>
+                                    <Input id="email" type="email" value={data.email} onChange={(e) => setData('email', e.target.value)} required />
+                                    {errors.email && <p className="text-destructive mt-1 text-sm">{errors.email}</p>}
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <Button disabled={processing}>Save Changes</Button>
+
+                                    <Transition
+                                        show={recentlySuccessful}
+                                        enter="transition ease-in-out duration-300"
+                                        enterFrom="opacity-0"
+                                        enterTo="opacity-100"
+                                        leave="transition ease-in-out duration-300"
+                                        leaveFrom="opacity-100"
+                                        leaveTo="opacity-0"
+                                    >
+                                        <p className="text-sm text-green-600">Saved</p>
+                                    </Transition>
+                                </div>
+                            </form>
+                        </Card>
+                    )}
+
+                    {currentSection === 'password' && (
+                        <Card className="p-6">
+                            <h3 className="mb-4 text-lg font-semibold">Change Password</h3>
+                            <p className="text-muted-foreground mb-6">
+                                Ensure your account is using a secure password to keep your account protected.
+                            </p>
+
+                            <form onSubmit={updatePassword} className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="current_password">Current Password</Label>
+                                    <Input
+                                        id="current_password"
+                                        type="password"
+                                        value={passwordData.current_password}
+                                        onChange={(e) => setPasswordData('current_password', e.target.value)}
+                                        required
+                                    />
+                                    {passwordErrors.current_password && (
+                                        <p className="text-destructive mt-1 text-sm">{passwordErrors.current_password}</p>
+                                    )}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="password">New Password</Label>
+                                    <Input
+                                        id="password"
+                                        type="password"
+                                        value={passwordData.password}
+                                        onChange={(e) => setPasswordData('password', e.target.value)}
+                                        required
+                                    />
+                                    {passwordErrors.password && <p className="text-destructive mt-1 text-sm">{passwordErrors.password}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="password_confirmation">Confirm Password</Label>
+                                    <Input
+                                        id="password_confirmation"
+                                        type="password"
+                                        value={passwordData.password_confirmation}
+                                        onChange={(e) => setPasswordData('password_confirmation', e.target.value)}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <Button disabled={passwordProcessing}>Update Password</Button>
+
+                                    <Transition
+                                        show={passwordRecentlySuccessful}
+                                        enter="transition ease-in-out duration-300"
+                                        enterFrom="opacity-0"
+                                        enterTo="opacity-100"
+                                        leave="transition ease-in-out duration-300"
+                                        leaveFrom="opacity-100"
+                                        leaveTo="opacity-0"
+                                    >
+                                        <p className="text-sm text-green-600">Password updated</p>
+                                    </Transition>
+                                </div>
+                            </form>
+                        </Card>
+                    )}
+                </div>
+            </div>
+        </AdminLayout>
+    );
+}
