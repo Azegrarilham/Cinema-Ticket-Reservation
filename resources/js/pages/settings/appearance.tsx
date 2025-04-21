@@ -1,7 +1,6 @@
 import { Head } from '@inertiajs/react';
 
 import AppearanceTabs from '@/components/appearance-tabs';
-import HeadingSmall from '@/components/heading-small';
 import { type BreadcrumbItem } from '@/types';
 
 import AppLayout from '@/layouts/app-layout';
@@ -21,7 +20,10 @@ export default function Appearance() {
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Appearance settings" description="Update your account's appearance settings" />
+                    <div className="mb-6">
+                        <h3 className="text-lg font-medium">Appearance settings</h3>
+                        <p className="text-sm text-muted-foreground">Update your account's appearance settings</p>
+                    </div>
                     <AppearanceTabs />
                 </div>
             </SettingsLayout>

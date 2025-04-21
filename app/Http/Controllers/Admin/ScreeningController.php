@@ -100,7 +100,54 @@ class ScreeningController extends Controller
      */
     public function show(Screening $screening)
     {
-        $screening->load(['film', 'seats', 'reservations.reservationSeats.seat']);
+        // Load the screening with related data, including reservation seat prices and payments
+        $screening->load([
+            'film',
+            'seats',
+            'reservations.user',
+            'reservations.payment',
+            'reservations.reservationSeats' => function($query) {
+                $query->with('seat')->select('id', 'reservation_id', 'seat_id', 'price');
+            }
+        ]);
+
+        // Prepare customer information for each reservation
+        $screening->reservations->each(function ($reservation) use ($screening) {
+            // Add customer_name and customer_email properties for the frontend
+            if ($reservation->user) {
+                $reservation->customer_name = $reservation->user->name;
+                $reservation->customer_email = $reservation->user->email;
+            } else {
+                $reservation->customer_name = $reservation->guest_name ?? 'Guest';
+                $reservation->customer_email = $reservation->guest_email ?? 'N/A';
+            }
+
+            // Calculate total price - first check if there's a payment
+            if ($reservation->payment && $reservation->payment->amount > 0) {
+                $reservation->total_price = (float)$reservation->payment->amount;
+            } else {
+                // Otherwise calculate from reservation seats
+                $seatCount = $reservation->reservationSeats->count();
+                if ($seatCount > 0) {
+                    // Explicitly calculate the sum of prices, checking if they exist
+                    $seatPrices = 0;
+                    foreach ($reservation->reservationSeats as $rs) {
+                        if (isset($rs->price) && $rs->price > 0) {
+                            $seatPrices += (float)$rs->price;
+                        }
+                    }
+
+                    if ($seatPrices > 0) {
+                        $reservation->total_price = $seatPrices;
+                    } else {
+                        // If no price on reservation seats, use screening price * seat count
+                        $reservation->total_price = $seatCount * $screening->price;
+                    }
+                } else {
+                    $reservation->total_price = 0;
+                }
+            }
+        });
 
         return Inertia::render('Admin/Screenings/Show', [
             'screening' => $screening,

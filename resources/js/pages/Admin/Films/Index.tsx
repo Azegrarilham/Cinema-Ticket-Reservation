@@ -1,4 +1,4 @@
-import Pagination from '@/components/Pagination';
+import { Pagination } from '@/components/ui/pagination';
 import AdminLayout from '@/layouts/AdminLayout';
 import { EyeIcon, FilmIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Head, Link, useForm } from '@inertiajs/react';
@@ -83,15 +83,15 @@ export default function Index({ films, filters }: Props) {
             <Head title="Films Management" />
 
             {/* Actions header */}
-            <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                    <FilmIcon className="text-primary mr-2 h-6 w-6" />
-                    <h2 className="text-foreground text-lg font-semibold">Film Catalog</h2>
-                    <span className="bg-muted ml-3 rounded-md px-2 py-1 text-xs font-medium">{films.total} total</span>
+                    <FilmIcon className="w-6 h-6 mr-2 text-primary" />
+                    <h2 className="text-lg font-semibold text-foreground">Film Catalog</h2>
+                    <span className="px-2 py-1 ml-3 text-xs font-medium rounded-md bg-muted">{films.total} total</span>
                 </div>
                 <Link
                     href={route('admin.films.create')}
-                    className="bg-primary hover:bg-primary/90 focus:ring-primary/30 flex items-center rounded-md px-4 py-2 text-sm font-medium text-white shadow-sm transition focus:ring-2 focus:outline-none"
+                    className="flex items-center px-4 py-2 text-sm font-medium text-white transition rounded-md shadow-sm bg-primary hover:bg-primary/90 focus:ring-primary/30 focus:ring-2 focus:outline-none"
                 >
                     Add New Film
                 </Link>
@@ -101,14 +101,14 @@ export default function Index({ films, filters }: Props) {
             <div className="mb-6">
                 <form onSubmit={handleSearch} className="flex items-center">
                     <div className="relative flex-grow">
-                        <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                            <MagnifyingGlassIcon className="text-muted-foreground h-5 w-5" aria-hidden="true" />
+                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                            <MagnifyingGlassIcon className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                         </div>
                         <input
                             type="text"
                             name="search"
                             id="search"
-                            className="focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground block w-full rounded-l-md border py-2 pr-3 pl-10 sm:text-sm"
+                            className="block w-full py-2 pl-10 pr-3 border focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground rounded-l-md sm:text-sm"
                             placeholder="Search film titles, directors, genres... outline-none focus:outline-none"
                             value={data.search}
                             onChange={(e) => setData('search', e.target.value)}
@@ -116,7 +116,7 @@ export default function Index({ films, filters }: Props) {
                     </div>
                     <button
                         type="submit"
-                        className="focus:ring-primary/30 bg-primary hover:bg-primary/90 border-border inline-flex items-center rounded-r-md border border-l-0 px-4 py-2 text-sm font-medium text-white transition focus:ring-2 focus:outline-none disabled:opacity-50"
+                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition border border-l-0 focus:ring-primary/30 bg-primary hover:bg-primary/90 border-border rounded-r-md focus:ring-2 focus:outline-none disabled:opacity-50"
                         disabled={processing}
                     >
                         Search
@@ -126,42 +126,42 @@ export default function Index({ films, filters }: Props) {
 
             {/* Films Table */}
             <div className="overflow-hidden rounded-lg shadow">
-                <div className="border-border bg-card relative overflow-x-auto border">
-                    <table className="divide-border min-w-full divide-y">
+                <div className="relative overflow-x-auto border border-border bg-card">
+                    <table className="min-w-full divide-y divide-border">
                         <thead className="bg-muted">
                             <tr>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Title
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Genre
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Duration
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Release Date
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Screenings
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Featured
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-border bg-card divide-y">
+                        <tbody className="divide-y divide-border bg-card">
                             {films.data.length > 0 ? (
                                 films.data.map((film) => (
-                                    <tr key={film.id} className="hover:bg-muted/40 transition-colors">
+                                    <tr key={film.id} className="transition-colors hover:bg-muted/40">
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <div className="border-border h-12 w-9 flex-shrink-0 overflow-hidden rounded-md border shadow-sm">
+                                                <div className="flex-shrink-0 h-12 overflow-hidden border rounded-md shadow-sm border-border w-9">
                                                     <img
-                                                        className="h-full w-full object-cover"
+                                                        className="object-cover w-full h-full"
                                                         src={
                                                             film.poster_image
                                                                 ? film.poster_image.startsWith('http')
@@ -173,37 +173,36 @@ export default function Index({ films, filters }: Props) {
                                                     />
                                                 </div>
                                                 <div className="ml-4">
-                                                    <div className="text-foreground text-sm font-medium">{film.title}</div>
-                                                    <div className="text-muted-foreground text-xs">Dir: {film.director}</div>
+                                                    <div className="text-sm font-medium text-foreground">{film.title}</div>
+                                                    <div className="text-xs text-muted-foreground">Dir: {film.director}</div>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="text-muted-foreground px-6 py-4 text-sm whitespace-nowrap">
+                                        <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
                                             <span className="bg-primary/10 text-primary inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium">
                                                 {film.genre}
                                             </span>
                                         </td>
-                                        <td className="text-muted-foreground px-6 py-4 text-sm whitespace-nowrap">{film.duration} min</td>
-                                        <td className="text-muted-foreground px-6 py-4 text-sm whitespace-nowrap">
+                                        <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">{film.duration} min</td>
+                                        <td className="px-6 py-4 text-sm text-muted-foreground whitespace-nowrap">
                                             {new Date(film.release_date).toLocaleDateString()}
                                         </td>
                                         <td className="px-6 py-4 text-sm whitespace-nowrap">
                                             <div className="space-y-1">
                                                 <div className="flex items-center">
-                                                    <div className="bg-success mr-2 h-2 w-2 rounded-full"></div>
-                                                    <span className="text-muted-foreground text-xs">Total: {film.screenings_count}</span>
+                                                    <div className="w-2 h-2 mr-2 rounded-full bg-success"></div>
+                                                    <span className="text-xs text-muted-foreground">Total: {film.screenings_count}</span>
                                                 </div>
                                                 <div className="flex items-center">
-                                                    <div className="bg-primary mr-2 h-2 w-2 rounded-full"></div>
-                                                    <span className="text-muted-foreground text-xs">Upcoming: {film.future_screenings_count}</span>
+                                                    <div className="w-2 h-2 mr-2 rounded-full bg-primary"></div>
+                                                    <span className="text-xs text-muted-foreground">Upcoming: {film.future_screenings_count}</span>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <span
-                                                className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${
-                                                    film.is_featured ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'
-                                                }`}
+                                                className={`inline-flex rounded-full px-2 text-xs leading-5 font-semibold ${film.is_featured ? 'bg-success/20 text-success' : 'bg-muted text-muted-foreground'
+                                                    }`}
                                             >
                                                 {film.is_featured ? 'Featured' : 'Standard'}
                                             </span>
@@ -212,27 +211,27 @@ export default function Index({ films, filters }: Props) {
                                             <div className="flex space-x-2">
                                                 <Link
                                                     href={route('admin.films.show', { film: film.id })}
-                                                    className="text-primary hover:text-primary/80 transition"
+                                                    className="transition text-primary hover:text-primary/80"
                                                     title="View"
                                                     aria-label={`View details for ${film.title}`}
                                                 >
-                                                    <EyeIcon className="h-5 w-5" />
+                                                    <EyeIcon className="w-5 h-5" />
                                                 </Link>
                                                 <Link
                                                     href={route('admin.films.edit', { film: film.id })}
-                                                    className="text-warning hover:text-warning/80 transition"
+                                                    className="transition text-warning hover:text-warning/80"
                                                     title="Edit"
                                                     aria-label={`Edit ${film.title}`}
                                                 >
-                                                    <PencilIcon className="h-5 w-5" />
+                                                    <PencilIcon className="w-5 h-5" />
                                                 </Link>
                                                 <button
                                                     onClick={() => openDeleteModal(film)}
-                                                    className="text-destructive hover:text-destructive/80 transition"
+                                                    className="transition text-destructive hover:text-destructive/80"
                                                     title="Delete"
                                                     aria-label={`Delete ${film.title}`}
                                                 >
-                                                    <TrashIcon className="h-5 w-5" />
+                                                    <TrashIcon className="w-5 h-5" />
                                                 </button>
                                             </div>
                                         </td>
@@ -242,15 +241,15 @@ export default function Index({ films, filters }: Props) {
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center">
                                         <div className="flex flex-col items-center justify-center">
-                                            <FilmIcon className="text-muted-foreground mb-4 h-12 w-12" />
-                                            <p className="text-muted-foreground mb-4 text-sm">No films found matching your search criteria.</p>
+                                            <FilmIcon className="w-12 h-12 mb-4 text-muted-foreground" />
+                                            <p className="mb-4 text-sm text-muted-foreground">No films found matching your search criteria.</p>
                                             {data.search && (
                                                 <button
                                                     onClick={() => {
                                                         setData('search', '');
                                                         get(route('admin.films.index'), { preserveState: true });
                                                     }}
-                                                    className="bg-primary hover:bg-primary/90 focus:ring-primary/30 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white transition focus:ring-2 focus:outline-none"
+                                                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition rounded-md bg-primary hover:bg-primary/90 focus:ring-primary/30 focus:ring-2 focus:outline-none"
                                                 >
                                                     Clear Search
                                                 </button>
@@ -267,22 +266,22 @@ export default function Index({ films, filters }: Props) {
             {/* Pagination */}
             {films.data.length > 0 && (
                 <div className="mt-6">
-                    <Pagination links={films.links} />
+                    <Pagination links={films.links} currentPage={films.current_page} totalPages={films.last_page} />
                 </div>
             )}
 
             {/* Delete Confirmation Modal */}
             {isDeleteModalOpen && filmToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-card w-full max-w-md rounded-lg p-6 shadow-lg">
-                        <div className="mb-4 flex items-center">
-                            <div className="bg-destructive/10 text-destructive flex h-10 w-10 items-center justify-center rounded-full">
-                                <TrashIcon className="h-5 w-5" />
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+                    <div className="w-full max-w-md p-6 rounded-lg shadow-lg bg-card">
+                        <div className="flex items-center mb-4">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-destructive/10 text-destructive">
+                                <TrashIcon className="w-5 h-5" />
                             </div>
-                            <h3 className="text-foreground ml-3 text-lg font-medium">Delete Film</h3>
+                            <h3 className="ml-3 text-lg font-medium text-foreground">Delete Film</h3>
                         </div>
 
-                        <p className="text-muted-foreground mb-6">
+                        <p className="mb-6 text-muted-foreground">
                             Are you sure you want to delete <span className="font-semibold">{filmToDelete.title}</span>? This action cannot be undone,
                             and will also delete all associated screenings and reservations.
                         </p>
@@ -290,13 +289,13 @@ export default function Index({ films, filters }: Props) {
                         <div className="flex justify-end space-x-3">
                             <button
                                 onClick={closeDeleteModal}
-                                className="border-border text-foreground hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium focus:outline-none"
+                                className="px-4 py-2 text-sm font-medium border rounded-md border-border text-foreground hover:bg-muted focus:outline-none"
                             >
                                 Cancel
                             </button>
                             <button
                                 onClick={confirmDelete}
-                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md px-4 py-2 text-sm font-medium focus:outline-none"
+                                className="px-4 py-2 text-sm font-medium rounded-md bg-destructive hover:bg-destructive/90 text-destructive-foreground focus:outline-none"
                             >
                                 Delete
                             </button>

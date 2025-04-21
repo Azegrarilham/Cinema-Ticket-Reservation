@@ -20,7 +20,7 @@ class FilmController extends Controller
                 $query->where('title', 'like', "%{$search}%");
             })
             ->withCount('screenings')
-            ->withCount('futureScreenings')
+            ->withCount(['futureScreenings as future_screenings_count'])
             ->orderBy('title')
             ->paginate(10)
             ->withQueryString();
@@ -80,9 +80,14 @@ class FilmController extends Controller
      */
     public function show(Film $film)
     {
+        // Load film with screenings and add the counts
         $film->load(['screenings' => function ($query) {
             $query->orderBy('start_time');
         }]);
+
+        // Add screenings count and future screenings count
+        $film->screenings_count = $film->screenings->count();
+        $film->future_screenings_count = $film->screenings->where('start_time', '>', now())->where('is_active', true)->count();
 
         return Inertia::render('Admin/Films/Show', [
             'film' => $film,

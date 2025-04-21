@@ -6,7 +6,6 @@ import ChevronDownIcon from '@heroicons/react/24/outline/ChevronDownIcon.js';
 import CogIcon from '@heroicons/react/24/outline/CogIcon.js';
 import FilmIcon from '@heroicons/react/24/outline/FilmIcon.js';
 import HomeIcon from '@heroicons/react/24/outline/HomeIcon.js';
-import StarIcon from '@heroicons/react/24/outline/StarIcon.js';
 import TicketIcon from '@heroicons/react/24/outline/TicketIcon.js';
 import UserIcon from '@heroicons/react/24/outline/UserIcon.js';
 import XMarkIcon from '@heroicons/react/24/outline/XMarkIcon.js';
@@ -70,13 +69,12 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
                     params: { _t: new Date().getTime() }
                 });
 
-
                 if (response.data.authenticated && response.data.user?.name) {
                     // Force a reload of the current page to refresh auth data
                     // Only reload if we have a valid user
                     router.reload();
                 } else {
-                    console.log('Auth refresh attempt returned no valid user:', response.data);
+                    // Auth refresh attempt returned no valid user
                 }
             } catch (error) {
                 console.error('Error refreshing auth:', error);
@@ -84,28 +82,16 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
                 setRefreshingAuth(false);
             }
         } else if (refreshAttempts >= 3) {
-            console.log('Max refresh attempts reached, using fallback "Admin" name');
+            // Max refresh attempts reached, using fallback "Admin" name
         }
     };
 
     // Try to refresh auth on initial load if name is missing
     useEffect(() => {
         if (!hasValidUserName && refreshAttempts === 0) {
-            console.log('Missing valid user name, attempting refresh...');
             refreshAuthData();
         }
     }, [hasValidUserName, refreshAttempts]);
-
-    // Log auth data for debugging
-    useEffect(() => {
-        if (process.env.NODE_ENV !== 'production') {
-            console.log('Page props:', pageProps);
-            console.log('Auth data:', auth);
-            console.log('User data:', user);
-            console.log('Has valid name:', hasValidUserName);
-            console.log('Refresh attempts:', refreshAttempts);
-        }
-    }, [pageProps, auth, user, hasValidUserName, refreshAttempts]);
 
     // Always use dark mode
     useEffect(() => {
@@ -255,28 +241,6 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
                             })}
                         </nav>
                     </div>
-
-                    {/* Now Showing Section */}
-                    <div className="p-3 mx-3 mt-8 rounded-lg shadow-inner bg-sidebar-accent">
-                        <h3 className="flex items-center mb-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                            <StarIcon className="mr-1 h-3.5 w-3.5 text-yellow-500" />
-                            Now Showing
-                        </h3>
-                        <div className="space-y-2">
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 mr-2 rounded-full bg-success"></div>
-                                <span className="text-xs text-sidebar-foreground">Oppenheimer</span>
-                            </div>
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 mr-2 rounded-full bg-success"></div>
-                                <span className="text-xs text-sidebar-foreground">Dune 2</span>
-                            </div>
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 mr-2 rounded-full bg-destructive"></div>
-                                <span className="text-xs text-sidebar-foreground">Inside Out 2</span>
-                            </div>
-                        </div>
-                    </div>
                 </div>
             </div>
 
@@ -321,28 +285,6 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
                                 );
                             })}
                         </nav>
-                    </div>
-
-                    {/* Now Showing Section */}
-                    <div className="p-3 mx-3 mt-auto mb-6 rounded-lg shadow-inner bg-sidebar-accent">
-                        <h3 className="flex items-center mb-3 text-xs font-semibold tracking-wider uppercase text-muted-foreground">
-                            <StarIcon className="mr-1 h-3.5 w-3.5 text-yellow-500" />
-                            Now Showing
-                        </h3>
-                        <div className="space-y-2">
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 mr-2 rounded-full bg-success"></div>
-                                <span className="text-xs text-sidebar-foreground">Oppenheimer</span>
-                            </div>
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 mr-2 rounded-full bg-success"></div>
-                                <span className="text-xs text-sidebar-foreground">Dune 2</span>
-                            </div>
-                            <div className="flex items-center">
-                                <div className="w-2 h-2 mr-2 rounded-full bg-destructive"></div>
-                                <span className="text-xs text-sidebar-foreground">Inside Out 2</span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>

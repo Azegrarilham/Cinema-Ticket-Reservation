@@ -4,7 +4,6 @@ import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { FormEventHandler } from 'react';
 
 import DeleteUser from '@/components/delete-user';
-import HeadingSmall from '@/components/heading-small';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -46,7 +45,10 @@ export default function Profile({ mustVerifyEmail, status }: { mustVerifyEmail: 
 
             <SettingsLayout>
                 <div className="space-y-6">
-                    <HeadingSmall title="Profile information" description="Update your name and email address" />
+                    <div className="mb-6">
+                        <h3 className="text-lg font-medium">Profile information</h3>
+                        <p className="text-sm text-muted-foreground">Update your name and email address</p>
+                    </div>
 
                     <form onSubmit={submit} className="space-y-6">
                         <div className="grid gap-2">
