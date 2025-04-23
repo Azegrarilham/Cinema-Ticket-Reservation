@@ -51,6 +51,11 @@ export default function Create({ films }: Props) {
         room: '',
         price: '',
         is_active: true,
+        total_seats: '100',
+        seat_layout: {
+            rows: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'],
+            seats_per_row: 10
+        }
     });
 
     // Combine the date and time into a single ISO string for submit
@@ -148,9 +153,8 @@ export default function Create({ films }: Props) {
                                         id="film_id"
                                         value={data.film_id}
                                         onChange={(e) => setData('film_id', e.target.value)}
-                                        className={`w-full rounded-md border px-3 py-2.5 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${
-                                            errors.film_id ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                        }`}
+                                        className={`w-full rounded-md border px-3 py-2.5 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.film_id ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                            }`}
                                         required
                                     >
                                         <option value="">Select a film</option>
@@ -249,9 +253,8 @@ export default function Create({ films }: Props) {
                                                 value={data.room}
                                                 onChange={(e) => setData('room', e.target.value)}
                                                 placeholder="e.g. Theater 1, IMAX, Screen A"
-                                                className={`w-full rounded-md border py-2.5 pl-10 pr-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${
-                                                    errors.room ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                                }`}
+                                                className={`w-full rounded-md border py-2.5 pl-10 pr-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.room ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                                    }`}
                                                 required
                                             />
                                         </div>
@@ -274,13 +277,38 @@ export default function Create({ films }: Props) {
                                                 value={data.price}
                                                 onChange={(e) => setData('price', e.target.value)}
                                                 placeholder="0.00"
-                                                className={`w-full rounded-md border py-2.5 pl-10 pr-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${
-                                                    errors.price ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                                }`}
+                                                className={`w-full rounded-md border py-2.5 pl-10 pr-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.price ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                                    }`}
                                                 required
                                             />
                                         </div>
                                         {errors.price && <p className="mt-1.5 text-sm text-destructive">{errors.price}</p>}
+                                    </div>
+
+                                    <div>
+                                        <label htmlFor="total_seats" className="mb-1.5 block text-sm font-medium text-foreground">
+                                            Total Seats <span className="text-destructive">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                id="total_seats"
+                                                type="number"
+                                                min="1"
+                                                max="500"
+                                                value={data.total_seats}
+                                                onChange={(e) => {
+                                                    setData('total_seats', e.target.value);
+                                                    setData('seat_layout', {
+                                                        ...data.seat_layout,
+                                                        seats_per_row: Math.ceil(parseInt(e.target.value) / 10)
+                                                    });
+                                                }}
+                                                className={`w-full rounded-md border py-2.5 px-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.total_seats ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                                    }`}
+                                                required
+                                            />
+                                        </div>
+                                        {errors.total_seats && <p className="mt-1.5 text-sm text-destructive">{errors.total_seats}</p>}
                                     </div>
 
                                     <div className="flex items-center p-3 border rounded-md border-border bg-muted/10">
