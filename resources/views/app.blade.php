@@ -32,6 +32,25 @@
 
         <title inertia>{{ config('app.name', 'Laravel') }}</title>
 
+        <!-- Preload hints for critical resources -->
+        <link rel="preload" href="{{ asset('fonts/your-main-font.woff2') }}" as="font" type="font/woff2" crossorigin>
+        <link rel="preload" as="style" href="{{ asset('build/assets/app.css') }}">
+        <link rel="preload" as="script" href="{{ asset('build/assets/app.js') }}">
+
+        <!-- Early connection hints -->
+        <link rel="dns-prefetch" href="{{ config('app.url') }}">
+        <link rel="preconnect" href="{{ config('app.url') }}" crossorigin>
+
+        <!-- Meta tags for better SEO and social sharing -->
+        <meta name="description" content="Book your cinema tickets online with ease">
+        <meta property="og:title" content="{{ config('app.name', 'Laravel') }}">
+        <meta property="og:description" content="Book your cinema tickets online with ease">
+        <meta property="og:image" content="{{ asset('images/og-image.jpg') }}">
+        <meta property="og:type" content="website">
+
+        <!-- Favicon -->
+        <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
+
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=instrument-sans:400,500,600" rel="stylesheet" />
 
@@ -42,5 +61,8 @@
     </head>
     <body class="font-sans antialiased">
         @inertia
+
+        <!-- Instant.Page for faster subsequent page loads -->
+        <script src="//instant.page/5.2.0" type="module" integrity="sha384-jnZyxPjiipYXnSU0ygqeac2q7CVYMbh84q0uHVRRxEtvFPiQYbXWUorga2aqZJ0n"></script>
     </body>
 </html>

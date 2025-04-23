@@ -14,6 +14,7 @@ use App\Models\Film;
 use App\Models\Screening;
 use App\Models\Reservation;
 use App\Models\Payment;
+use App\Http\Controllers\ImageController;
 
 // HIGHEST PRIORITY ROUTE - Direct access to admin dashboard URL
 // Still use web middleware for Inertia to work properly, but bypass auth middleware
@@ -106,6 +107,11 @@ Route::middleware(['web', \App\Http\Middleware\EnsureUserIsClient::class])->grou
 Route::get('/dashboard', function() {
     abort(404);
 });
+
+// Image optimization routes
+Route::get('/img/{path}', [ImageController::class, 'show'])
+    ->where('path', '.*')
+    ->name('image.show');
 
 // Admin Routes
 // Show admin dashboard at /admin if authenticated as admin, otherwise redirect to admin login

@@ -161,9 +161,16 @@ return [
 
         // Package Service Providers...
         Barryvdh\DomPDF\ServiceProvider::class,
+        Intervention\Image\ImageServiceProvider::class,
 
         // Application Service Providers...
         App\Providers\AppServiceProvider::class,
         App\Providers\RouteServiceProvider::class,
+        App\Providers\ImageServiceProvider::class,
+    ],
+
+    'aliases' => [
+        // ...existing aliases...
+        'Image' => Intervention\Image\Facades\Image::class,
     ],
 ];

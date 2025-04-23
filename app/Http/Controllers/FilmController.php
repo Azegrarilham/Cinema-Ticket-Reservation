@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Film;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Cache;
 
 class FilmController extends Controller
 {
@@ -13,20 +14,29 @@ class FilmController extends Controller
      */
     public function index(Request $request)
     {
-        $films = Film::query()
-            ->when($request->search, function ($query, $search) {
-                $query->where('title', 'like', "%{$search}%");
-            })
-            ->when($request->genre, function ($query, $genre) {
-                $query->where('genre', $genre);
-            })
-            ->orderBy('title')
-            ->paginate(12)
-            ->withQueryString();
+        $cacheKey = 'films_page_' . $request->get('page', 1) . '_' .
+                    $request->get('search', '') . '_' .
+                    $request->get('genre', '');
 
-        $genres = Film::distinct('genre')
-            ->whereNotNull('genre')
-            ->pluck('genre');
+        $films = Cache::remember($cacheKey, 60 * 5, function () use ($request) {
+            return Film::query()
+                ->when($request->search, function ($query, $search) {
+                    $query->where('title', 'like', "%{$search}%");
+                })
+                ->when($request->genre, function ($query, $genre) {
+                    $query->where('genre', $genre);
+                })
+                ->select('id', 'title', 'genre', 'duration', 'poster_image')
+                ->orderBy('title')
+                ->paginate(12)
+                ->withQueryString();
+        });
+
+        $genres = Cache::remember('all_genres', 60 * 30, function () {
+            return Film::distinct('genre')
+                ->whereNotNull('genre')
+                ->pluck('genre');
+        });
 
         return Inertia::render('Client/Films/Index', [
             'films' => $films,
@@ -40,19 +50,24 @@ class FilmController extends Controller
      */
     public function show(Film $film)
     {
-        $film->load(['futureScreenings' => function ($query) {
-            $query->with('seats');
-        }]);
+        $cacheKey = 'film_' . $film->id;
 
-        // Group screenings by date for better display
-        $screenings = $film->futureScreenings->groupBy(function ($screening) {
-            return $screening->start_time->format('Y-m-d');
+        $filmData = Cache::remember($cacheKey, 60 * 15, function () use ($film) {
+            $film->load(['futureScreenings' => function ($query) {
+                $query->with('seats');
+            }]);
+
+            $screenings = $film->futureScreenings->groupBy(function ($screening) {
+                return $screening->start_time->format('Y-m-d');
+            });
+
+            return [
+                'film' => $film,
+                'screenings' => $screenings
+            ];
         });
 
-        return Inertia::render('Client/Films/Show', [
-            'film' => $film,
-            'screenings' => $screenings,
-        ]);
+        return Inertia::render('Client/Films/Show', $filmData);
     }
 
     /**
@@ -60,17 +75,20 @@ class FilmController extends Controller
      */
     public function home()
     {
-        // Fetch latest films from our database
-        $latestFilms = Film::latest('created_at')
-            ->take(6)
-            ->get();
+        $latestFilms = Cache::remember('latest_films', 60 * 10, function () {
+            return Film::select('id', 'title', 'poster_image', 'genre', 'duration')
+                ->latest('created_at')
+                ->take(6)
+                ->get();
+        });
 
-        // Fetch random featured films (simulating an external API call)
-        // In a real implementation, you would use an HTTP client to fetch data from an external API
-        // This is a placeholder that fetches random films from our own database
-        $featuredFilms = Film::inRandomOrder()
-            ->limit(5)
-            ->get();
+        $featuredFilms = Cache::remember('featured_films', 60 * 10, function () {
+            return Film::select('id', 'title', 'poster_image', 'genre', 'duration')
+                ->where('is_featured', true)
+                ->inRandomOrder()
+                ->take(5)
+                ->get();
+        });
 
         return Inertia::render('Client/Welcome', [
             'featuredFilms' => $featuredFilms,
