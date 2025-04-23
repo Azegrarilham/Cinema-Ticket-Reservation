@@ -1,17 +1,18 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import {
-    ArrowDownCircleIcon,
-    ArrowUpCircleIcon,
-    CalendarIcon,
-    ChartBarIcon,
-    ClockIcon,
-    CreditCardIcon,
-    FilmIcon,
-    TicketIcon,
-    UserIcon,
-} from '@heroicons/react/24/outline';
+    ArrowDownCircle as ArrowDownCircleIcon,
+    ArrowUpCircle as ArrowUpCircleIcon,
+    Calendar as CalendarIcon,
+    ChartBar as ChartBarIcon,
+    Clock as ClockIcon,
+    CreditCard as CreditCardIcon,
+    Film as FilmIcon,
+    Ticket as TicketIcon,
+    User as UserIcon,
+} from 'lucide-react';
 import { Head, Link } from '@inertiajs/react';
 import Chart from 'chart.js/auto';
+import { motion } from 'framer-motion';
 import { useEffect, useRef } from 'react';
 
 interface DashboardProps {
@@ -63,6 +64,30 @@ interface DashboardProps {
         reservations_count: number;
     }>;
 }
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 300,
+            damping: 24
+        }
+    }
+};
 
 export default function Dashboard({ stats, upcomingScreenings, recentReservations, popularFilms }: DashboardProps) {
     const popularFilmsChartRef = useRef<HTMLCanvasElement>(null);
@@ -175,7 +200,7 @@ export default function Dashboard({ stats, upcomingScreenings, recentReservation
                             },
                             tooltip: {
                                 callbacks: {
-                                    label: (context) => {
+                                    label: (context: { raw: number }) => {
                                         return `Revenue: $${context.raw.toFixed(2)}`;
                                     },
                                 },
@@ -250,9 +275,9 @@ export default function Dashboard({ stats, upcomingScreenings, recentReservation
 
     const getGrowthIcon = (value: number) => {
         if (value > 0) {
-            return <ArrowUpCircleIcon className="text-success h-5 w-5" />;
+            return <ArrowUpCircleIcon className="w-5 h-5 text-success" />;
         } else if (value < 0) {
-            return <ArrowDownCircleIcon className="text-destructive h-5 w-5" />;
+            return <ArrowDownCircleIcon className="w-5 h-5 text-destructive" />;
         }
         return null;
     };
@@ -262,16 +287,25 @@ export default function Dashboard({ stats, upcomingScreenings, recentReservation
             <Head title="Admin Dashboard" />
 
             {/* Stats Cards */}
-            <div className="mb-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
+            <motion.div
+                className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <motion.div
+                    variants={itemVariants}
+                    className="overflow-hidden transition-shadow border rounded-lg shadow-sm border-border bg-card hover:shadow-md"
+                    whileHover={{ scale: 1.01 }}
+                >
                     <div className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-muted-foreground text-sm font-medium">Films</p>
-                                <div className="mt-1 flex items-center space-x-1">
-                                    <h3 className="text-foreground text-2xl font-bold">{stats.films_count}</h3>
+                                <p className="text-sm font-medium text-muted-foreground">Films</p>
+                                <div className="flex items-center mt-1 space-x-1">
+                                    <h3 className="text-2xl font-bold text-foreground">{stats.films_count}</h3>
                                     {stats.recent_growth?.films !== undefined && (
-                                        <div className="ml-2 flex items-center text-xs">
+                                        <div className="flex items-center ml-2 text-xs">
                                             {getGrowthIcon(stats.recent_growth.films)}
                                             <span className={stats.recent_growth.films > 0 ? 'text-success' : 'text-destructive'}>
                                                 {Math.abs(stats.recent_growth.films)}%
@@ -279,24 +313,31 @@ export default function Dashboard({ stats, upcomingScreenings, recentReservation
                                         </div>
                                     )}
                                 </div>
-                                <p className="text-muted-foreground mt-1 text-xs">Total films in catalog</p>
+                                <p className="mt-1 text-xs text-muted-foreground">Total films in catalog</p>
                             </div>
-                            <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full">
-                                <FilmIcon className="h-6 w-6" />
-                            </div>
+                            <motion.div
+                                className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary"
+                                whileHover={{ rotate: 15 }}
+                            >
+                                <FilmIcon className="w-6 h-6" />
+                            </motion.div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
+                <motion.div
+                    variants={itemVariants}
+                    className="overflow-hidden transition-shadow border rounded-lg shadow-sm border-border bg-card hover:shadow-md"
+                    whileHover={{ scale: 1.01 }}
+                >
                     <div className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-muted-foreground text-sm font-medium">Screenings</p>
-                                <div className="mt-1 flex items-center space-x-1">
-                                    <h3 className="text-foreground text-2xl font-bold">{stats.screenings_count}</h3>
+                                <p className="text-sm font-medium text-muted-foreground">Screenings</p>
+                                <div className="flex items-center mt-1 space-x-1">
+                                    <h3 className="text-2xl font-bold text-foreground">{stats.screenings_count}</h3>
                                     {stats.recent_growth?.screenings !== undefined && (
-                                        <div className="ml-2 flex items-center text-xs">
+                                        <div className="flex items-center ml-2 text-xs">
                                             {getGrowthIcon(stats.recent_growth.screenings)}
                                             <span className={stats.recent_growth.screenings > 0 ? 'text-success' : 'text-destructive'}>
                                                 {Math.abs(stats.recent_growth.screenings)}%
@@ -304,24 +345,31 @@ export default function Dashboard({ stats, upcomingScreenings, recentReservation
                                         </div>
                                     )}
                                 </div>
-                                <p className="text-muted-foreground mt-1 text-xs">Total scheduled screenings</p>
+                                <p className="mt-1 text-xs text-muted-foreground">Total scheduled screenings</p>
                             </div>
-                            <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full">
-                                <CalendarIcon className="h-6 w-6" />
-                            </div>
+                            <motion.div
+                                className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary"
+                                whileHover={{ rotate: 15 }}
+                            >
+                                <CalendarIcon className="w-6 h-6" />
+                            </motion.div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
+                <motion.div
+                    variants={itemVariants}
+                    className="overflow-hidden transition-shadow border rounded-lg shadow-sm border-border bg-card hover:shadow-md"
+                    whileHover={{ scale: 1.01 }}
+                >
                     <div className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-muted-foreground text-sm font-medium">Reservations</p>
-                                <div className="mt-1 flex items-center space-x-1">
-                                    <h3 className="text-foreground text-2xl font-bold">{stats.reservations_count}</h3>
+                                <p className="text-sm font-medium text-muted-foreground">Reservations</p>
+                                <div className="flex items-center mt-1 space-x-1">
+                                    <h3 className="text-2xl font-bold text-foreground">{stats.reservations_count}</h3>
                                     {stats.recent_growth?.reservations !== undefined && (
-                                        <div className="ml-2 flex items-center text-xs">
+                                        <div className="flex items-center ml-2 text-xs">
                                             {getGrowthIcon(stats.recent_growth.reservations)}
                                             <span className={stats.recent_growth.reservations > 0 ? 'text-success' : 'text-destructive'}>
                                                 {Math.abs(stats.recent_growth.reservations)}%
@@ -329,24 +377,31 @@ export default function Dashboard({ stats, upcomingScreenings, recentReservation
                                         </div>
                                     )}
                                 </div>
-                                <p className="text-muted-foreground mt-1 text-xs">Total customer bookings</p>
+                                <p className="mt-1 text-xs text-muted-foreground">Total customer bookings</p>
                             </div>
-                            <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full">
-                                <TicketIcon className="h-6 w-6" />
-                            </div>
+                            <motion.div
+                                className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary"
+                                whileHover={{ rotate: 15 }}
+                            >
+                                <TicketIcon className="w-6 h-6" />
+                            </motion.div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
+                <motion.div
+                    variants={itemVariants}
+                    className="overflow-hidden transition-shadow border rounded-lg shadow-sm border-border bg-card hover:shadow-md"
+                    whileHover={{ scale: 1.01 }}
+                >
                     <div className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-muted-foreground text-sm font-medium">Revenue</p>
-                                <div className="mt-1 flex items-center space-x-1">
-                                    <h3 className="text-foreground text-2xl font-bold">{formatCurrency(stats.revenue)}</h3>
+                                <p className="text-sm font-medium text-muted-foreground">Revenue</p>
+                                <div className="flex items-center mt-1 space-x-1">
+                                    <h3 className="text-2xl font-bold text-foreground">{formatCurrency(stats.revenue)}</h3>
                                     {stats.recent_growth?.revenue !== undefined && (
-                                        <div className="ml-2 flex items-center text-xs">
+                                        <div className="flex items-center ml-2 text-xs">
                                             {getGrowthIcon(stats.recent_growth.revenue)}
                                             <span className={stats.recent_growth.revenue > 0 ? 'text-success' : 'text-destructive'}>
                                                 {Math.abs(stats.recent_growth.revenue)}%
@@ -354,262 +409,199 @@ export default function Dashboard({ stats, upcomingScreenings, recentReservation
                                         </div>
                                     )}
                                 </div>
-                                <p className="text-muted-foreground mt-1 text-xs">Total earnings</p>
+                                <p className="mt-1 text-xs text-muted-foreground">Total earnings</p>
                             </div>
-                            <div className="bg-primary/10 text-primary flex h-12 w-12 items-center justify-center rounded-full">
-                                <CreditCardIcon className="h-6 w-6" />
-                            </div>
+                            <motion.div
+                                className="flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 text-primary"
+                                whileHover={{ rotate: 15 }}
+                            >
+                                <CreditCardIcon className="w-6 h-6" />
+                            </motion.div>
                         </div>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
 
             {/* Charts & Upcoming Screenings */}
-            <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <motion.div
+                className="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-2"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                transition={{ delay: 0.3 }}
+            >
                 {/* Popular Films Chart */}
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
-                    <div className="border-border bg-muted flex items-center justify-between border-b px-6 py-4">
-                        <h3 className="text-foreground flex items-center text-lg font-medium">
-                            <ChartBarIcon className="text-primary mr-2 h-5 w-5" />
+                <motion.div
+                    variants={itemVariants}
+                    className="overflow-hidden transition-shadow border rounded-lg shadow-sm border-border bg-card hover:shadow-md"
+                >
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted">
+                        <h3 className="flex items-center text-lg font-medium text-foreground">
+                            <ChartBarIcon className="w-5 h-5 mr-2 text-primary" />
                             Popular Films
                         </h3>
-                        <Link href={route('admin.reports.films')} className="text-primary hover:text-primary/90 text-sm font-medium">
+                        <motion.div whileHover={{ x: 2 }}>
+                            <Link href={route('admin.reports.films')} className="text-sm font-medium text-primary hover:text-primary/90">
                             View Report
                         </Link>
+                        </motion.div>
                     </div>
                     <div className="p-6">
                         <div className="h-[240px] w-full">
                             <canvas ref={popularFilmsChartRef}></canvas>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Revenue Chart */}
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
-                    <div className="border-border bg-muted flex items-center justify-between border-b px-6 py-4">
-                        <h3 className="text-foreground flex items-center text-lg font-medium">
-                            <CreditCardIcon className="text-primary mr-2 h-5 w-5" />
+                <motion.div
+                    variants={itemVariants}
+                    className="overflow-hidden transition-shadow border rounded-lg shadow-sm border-border bg-card hover:shadow-md"
+                >
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted">
+                        <h3 className="flex items-center text-lg font-medium text-foreground">
+                            <CreditCardIcon className="w-5 h-5 mr-2 text-primary" />
                             Monthly Revenue
                         </h3>
-                        <Link href={route('admin.reports.revenue')} className="text-primary hover:text-primary/90 text-sm font-medium">
+                        <motion.div whileHover={{ x: 2 }}>
+                            <Link href={route('admin.reports.revenue')} className="text-sm font-medium text-primary hover:text-primary/90">
                             View Report
                         </Link>
+                        </motion.div>
                     </div>
                     <div className="p-6">
                         <div className="h-[240px] w-full">
                             <canvas ref={revenueChartRef}></canvas>
                         </div>
                     </div>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
 
-            <div className="mb-8 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <motion.div
+                className="grid grid-cols-1 gap-6 mb-8 lg:grid-cols-3"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                transition={{ delay: 0.5 }}
+            >
                 {/* Recent Reservations */}
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm lg:col-span-2">
-                    <div className="border-border bg-muted flex items-center justify-between border-b px-6 py-4">
-                        <h3 className="text-foreground flex items-center text-lg font-medium">
-                            <TicketIcon className="text-primary mr-2 h-5 w-5" />
+                <motion.div
+                    variants={itemVariants}
+                    className="overflow-hidden transition-shadow border rounded-lg shadow-sm border-border bg-card hover:shadow-md lg:col-span-2"
+                >
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted">
+                        <h3 className="flex items-center text-lg font-medium text-foreground">
+                            <TicketIcon className="w-5 h-5 mr-2 text-primary" />
                             Recent Reservations
                         </h3>
-                        <Link href={route('admin.reservations.index')} className="text-primary hover:text-primary/90 text-sm font-medium">
+                        <motion.div whileHover={{ x: 2 }}>
+                            <Link href={route('admin.reservations.index')} className="text-sm font-medium text-primary hover:text-primary/90">
                             View All
                         </Link>
+                        </motion.div>
                     </div>
-                    <div className="overflow-x-auto">
-                        <table className="divide-border min-w-full divide-y">
-                            <thead className="bg-muted">
-                                <tr>
-                                    <th
-                                        scope="col"
-                                        className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase"
-                                    >
-                                        Code
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase"
-                                    >
-                                        Film
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase"
-                                    >
-                                        Customer
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase"
-                                    >
-                                        Status
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase"
-                                    >
-                                        Date
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-card divide-border divide-y">
-                                {recentReservations.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={5} className="px-6 py-8 text-center">
-                                            <div className="flex flex-col items-center">
-                                                <TicketIcon className="text-muted-foreground mb-2 h-10 w-10" />
-                                                <p className="text-muted-foreground text-sm">No recent reservations available</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    recentReservations.slice(0, 5).map((reservation) => (
-                                        <tr key={reservation.id} className="hover:bg-muted/30 transition-colors">
-                                            <td className="text-foreground px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                                <Link
-                                                    href={route('admin.reservations.show', { reservation: reservation.id })}
-                                                    className="text-primary hover:text-primary/80"
-                                                >
-                                                    {reservation.reservation_code}
-                                                </Link>
-                                            </td>
-                                            <td className="text-foreground px-6 py-4 text-sm whitespace-nowrap">
-                                                {reservation.screening.film.title.length > 20
-                                                    ? reservation.screening.film.title.substring(0, 20) + '...'
-                                                    : reservation.screening.film.title}
-                                            </td>
-                                            <td className="text-foreground px-6 py-4 text-sm whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <UserIcon className="text-muted-foreground mr-2 h-4 w-4" />
-                                                    {reservation.user?.name || reservation.guest_name || 'Anonymous'}
+                    <div className="divide-y divide-border">
+                        {recentReservations.length > 0 ? (
+                            recentReservations.map((reservation, index) => (
+                                <motion.div
+                                    key={reservation.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.1 * index }}
+                                    className="transition-colors hover:bg-muted/40"
+                                >
+                                    <div className="px-6 py-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center space-x-4">
+                                                <div className={`h-9 w-9 flex items-center justify-center rounded-full ${getStatusBadgeClass(reservation.status).replace('text-', 'bg-').replace('/20', '/10')}`}>
+                                                    <UserIcon className={`h-4 w-4 ${getStatusBadgeClass(reservation.status)}`} />
                                                 </div>
-                                            </td>
-                                            <td className="px-6 py-4 text-sm whitespace-nowrap">
-                                                <span
-                                                    className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeClass(
-                                                        reservation.status,
-                                                    )}`}
-                                                >
-                                                    {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
-                                                </span>
-                                            </td>
-                                            <td className="text-foreground px-6 py-4 text-sm whitespace-nowrap">
-                                                {formatDate(reservation.created_at)}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
+                                                <div>
+                                                    <p className="text-sm font-medium text-foreground line-clamp-1">
+                                                        {reservation.user?.name || reservation.guest_name || 'Anonymous User'}
+                                                    </p>
+                                                    <div className="flex items-center mt-1 space-x-2 text-xs text-muted-foreground">
+                                                        <span>{reservation.reservation_code}</span>
+                                                        <span className="w-1 h-1 rounded-full bg-muted-foreground"></span>
+                                                        <span>{formatDate(reservation.created_at)}</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <p className="text-sm font-medium text-foreground line-clamp-1">{reservation.screening.film.title}</p>
+                                                <div className="flex items-center justify-end mt-1 space-x-1 text-xs">
+                                                    <ClockIcon className="w-3 h-3 text-muted-foreground" />
+                                                    <span className="text-muted-foreground">{formatTime(reservation.screening.start_time)}</span>
+                                                    <span className={`ml-2 rounded-full px-2 py-0.5 text-xs ${getStatusBadgeClass(reservation.status)}`}>
+                                                        {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            ))
+                        ) : (
+                            <div className="px-6 py-8 text-center">
+                                <p className="text-sm text-muted-foreground">No recent reservations found.</p>
+                            </div>
+                        )}
                     </div>
-                </div>
+                </motion.div>
 
-                {/* Upcoming Screenings */}
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
-                    <div className="border-border bg-muted flex items-center justify-between border-b px-6 py-4">
-                        <h3 className="text-foreground flex items-center text-lg font-medium">
-                            <CalendarIcon className="text-primary mr-2 h-5 w-5" />
+                <motion.div
+                    variants={itemVariants}
+                    className="overflow-hidden transition-shadow border rounded-lg shadow-sm border-border bg-card hover:shadow-md"
+                >
+                    <div className="flex items-center justify-between px-6 py-4 border-b border-border bg-muted">
+                        <h3 className="flex items-center text-lg font-medium text-foreground">
+                            <CalendarIcon className="w-5 h-5 mr-2 text-primary" />
                             Upcoming Screenings
                         </h3>
-                        <Link href={route('admin.screenings.index')} className="text-primary hover:text-primary/90 text-sm font-medium">
+                        <motion.div whileHover={{ x: 2 }}>
+                            <Link href={route('admin.screenings.index')} className="text-sm font-medium text-primary hover:text-primary/90">
                             View All
                         </Link>
+                        </motion.div>
                     </div>
                     <div className="px-6 py-4">
-                        <div className="divide-border divide-y">
-                            {upcomingScreenings.length === 0 ? (
-                                <div className="flex flex-col items-center py-6 text-center">
-                                    <CalendarIcon className="text-muted-foreground mb-2 h-10 w-10" />
-                                    <p className="text-muted-foreground text-sm">No upcoming screenings scheduled</p>
-                                </div>
-                            ) : (
-                                upcomingScreenings.slice(0, 5).map((screening) => (
-                                    <div key={screening.id} className="py-3 first:pt-0 last:pb-0">
-                                        <Link
-                                            href={route('admin.screenings.show', { screening: screening.id })}
-                                            className="hover:bg-muted/30 -mx-2 block rounded-md px-2 py-2 transition-colors"
-                                        >
-                                            <div className="flex items-start justify-between">
-                                                <div>
-                                                    <h4 className="text-foreground text-sm font-medium">
-                                                        {screening.film.title.length > 30
-                                                            ? screening.film.title.substring(0, 30) + '...'
-                                                            : screening.film.title}
-                                                    </h4>
-                                                    <p className="text-muted-foreground mt-1 text-xs">Room: {screening.room}</p>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-muted-foreground flex items-center text-xs">
-                                                        <CalendarIcon className="mr-1 h-3 w-3" />
-                                                        {formatDate(screening.start_time)}
-                                                    </div>
-                                                    <div className="text-muted-foreground mt-1 flex items-center text-xs">
-                                                        <ClockIcon className="mr-1 h-3 w-3" />
+                        <div className="divide-y divide-border">
+                            {upcomingScreenings.length > 0 ? (
+                                upcomingScreenings.map((screening, index) => (
+                                    <motion.div
+                                        key={screening.id}
+                                        initial={{ opacity: 0, y: 20 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: 0.1 * index }}
+                                        className="px-2 py-3 -mx-2 transition-colors rounded-md first:pt-0 last:pb-0 hover:bg-muted/10"
+                                    >
+                                        <div className="flex items-center justify-between">
+                                            <div className="min-w-0">
+                                                <p className="text-sm font-medium truncate text-foreground">{screening.film.title}</p>
+                                                <div className="flex items-center mt-1 space-x-1">
+                                                    <ClockIcon className="w-3 h-3 text-muted-foreground" />
+                                                    <span className="text-xs text-muted-foreground">
                                                         {formatTime(screening.start_time)}
-                                                    </div>
+                                                    </span>
                                                 </div>
                                             </div>
-                                        </Link>
+                                            <div className="ml-4">
+                                                <span className="px-2 py-1 text-xs rounded-full bg-primary/10 text-primary whitespace-nowrap">
+                                                    {screening.room}
+                                                </span>
+                                            </div>
                                     </div>
+                                    </motion.div>
                                 ))
+                            ) : (
+                                <div className="py-8 text-center">
+                                    <p className="text-sm text-muted-foreground">No upcoming screenings found.</p>
+                                </div>
                             )}
                         </div>
                     </div>
-                </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
-                <div className="border-border bg-muted border-b px-6 py-4">
-                    <h3 className="text-foreground text-lg font-medium">Quick Actions</h3>
-                </div>
-                <div className="p-6">
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-                        <Link
-                            href={route('admin.films.create')}
-                            className="border-border hover:bg-muted flex flex-col items-center justify-center rounded-lg border p-4 text-center transition"
-                        >
-                            <div className="bg-primary/10 text-primary mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                                <FilmIcon className="h-6 w-6" />
-                            </div>
-                            <h4 className="text-foreground mb-1 text-sm font-medium">Add New Film</h4>
-                            <p className="text-muted-foreground text-xs">Create a film entry</p>
-                        </Link>
-
-                        <Link
-                            href={route('admin.screenings.create')}
-                            className="border-border hover:bg-muted flex flex-col items-center justify-center rounded-lg border p-4 text-center transition"
-                        >
-                            <div className="bg-primary/10 text-primary mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                                <CalendarIcon className="h-6 w-6" />
-                            </div>
-                            <h4 className="text-foreground mb-1 text-sm font-medium">Schedule Screening</h4>
-                            <p className="text-muted-foreground text-xs">Add a new showing</p>
-                        </Link>
-
-                        <Link
-                            href={route('admin.reports.revenue')}
-                            className="border-border hover:bg-muted flex flex-col items-center justify-center rounded-lg border p-4 text-center transition"
-                        >
-                            <div className="bg-primary/10 text-primary mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                                <ChartBarIcon className="h-6 w-6" />
-                            </div>
-                            <h4 className="text-foreground mb-1 text-sm font-medium">View Reports</h4>
-                            <p className="text-muted-foreground text-xs">Check performance</p>
-                        </Link>
-
-                        <Link
-                            href={route('admin.reservations.index')}
-                            className="border-border hover:bg-muted flex flex-col items-center justify-center rounded-lg border p-4 text-center transition"
-                        >
-                            <div className="bg-primary/10 text-primary mb-3 flex h-12 w-12 items-center justify-center rounded-full">
-                                <TicketIcon className="h-6 w-6" />
-                            </div>
-                            <h4 className="text-foreground mb-1 text-sm font-medium">Manage Reservations</h4>
-                            <p className="text-muted-foreground text-xs">Handle bookings</p>
-                        </Link>
-                    </div>
-                </div>
-            </div>
+                </motion.div>
+            </motion.div>
         </AdminLayout>
     );
 }

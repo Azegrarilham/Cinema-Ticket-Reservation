@@ -5,7 +5,6 @@ import { useInView } from 'react-intersection-observer';
 
 const HeroSection = () => {
     const [scrollY, setScrollY] = useState(0);
-    const [isVideoPlaying, setIsVideoPlaying] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
     // Parallax effect
@@ -18,6 +17,33 @@ const HeroSection = () => {
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
 
+    // Add smooth scroll behavior to document
+    useEffect(() => {
+        // Apply smooth scrolling to the document
+        document.documentElement.style.scrollBehavior = 'smooth';
+
+        // Clean up
+        return () => {
+            document.documentElement.style.scrollBehavior = '';
+        };
+    }, []);
+
+    // Handle scroll to next section
+    const handleScrollToNextSection = () => {
+        // Target the first section after hero (FeaturedFilmsSection)
+        const featuredSection = document.getElementById('featured');
+        if (featuredSection) {
+            featuredSection.scrollIntoView();
+        } else {
+            // If no ID found, scroll to an approximate position
+            const heroHeight = window.innerHeight;
+            window.scrollTo({
+                top: heroHeight,
+                behavior: 'smooth'
+            });
+        }
+    };
+
     // Custom hooks for section animations
     const [heroRef, heroInView] = useInView({
         triggerOnce: false,
@@ -28,7 +54,6 @@ const HeroSection = () => {
     const playVideo = () => {
         if (videoRef.current) {
             videoRef.current.play();
-            setIsVideoPlaying(true);
         }
     };
 
@@ -67,7 +92,7 @@ const HeroSection = () => {
                     transform: `translateY(${scrollY * 0.2}px)`,
                 }}
             >
-                <motion.div initial="hidden" animate={heroInView ? 'visible' : 'hidden'} className="max-w-3xl">
+                <motion.div initial="hidden" animate={heroInView ? 'visible' : 'hidden'} className="max-w-4xl">
                     <div className="flex items-center mb-4">
                         <motion.div custom={0} variants={textVariants} className="w-10 h-1 mr-4 rounded-full bg-primary" />
                         <motion.span custom={1} variants={textVariants} className="text-primary text-sm font-medium tracking-[0.2em] uppercase">
@@ -81,10 +106,10 @@ const HeroSection = () => {
                         className="text-5xl font-bold tracking-tight text-white md:text-6xl lg:text-7xl"
                     >
                         Where Stories
-                        <span className="relative inline-block ml-2">
+                        <span className="relative inline-block px-2 py-1 ml-2">
                             <span className="relative z-10">Come Alive</span>
                             <motion.span
-                                className="absolute left-0 w-full h-4 bg-primary/30 -bottom-2 -z-10"
+                                className="absolute left-0 w-full h-full bg-primary/30 -bottom-0 -z-10"
                                 initial={{ width: 0 }}
                                 animate={{ width: '100%' }}
                                 transition={{ delay: 0.8, duration: 0.8 }}
@@ -147,8 +172,9 @@ const HeroSection = () => {
                 </motion.div>
             </div>
 
-            {/* Dynamic scroll indicator */}
-            <motion.div
+            {/* Dynamic scroll indicator - converted to button */}
+            <motion.button
+                onClick={handleScrollToNextSection}
                 animate={{
                     y: [0, 10, 0],
                     opacity: [0.8, 0.4, 0.8],
@@ -157,7 +183,9 @@ const HeroSection = () => {
                     repeat: Infinity,
                     duration: 2,
                 }}
-                className="absolute z-10 transform -translate-x-1/2 bottom-10 left-1/2"
+                className="absolute z-10 p-2 transform -translate-x-1/2 border-none outline-none cursor-pointer bottom-30 left-1/2 focus:outline-none focus:ring-0 focus:border-0 active:outline-none"
+                aria-label="Scroll to next section"
+                style={{ WebkitTapHighlightColor: 'transparent', outlineColor: 'transparent' }}
             >
                 <div className="flex flex-col items-center">
                     <span className="mb-2 text-sm font-light tracking-wider text-white/80">Discover More</span>
@@ -165,7 +193,7 @@ const HeroSection = () => {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 13l-7 7-7-7m14-8l-7 7-7-7" />
                     </svg>
                 </div>
-            </motion.div>
+            </motion.button>
         </section>
     );
 };

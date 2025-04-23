@@ -1,7 +1,29 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { CalendarIcon, FilmIcon } from '@heroicons/react/24/outline';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            when: 'beforeChildren',
+            staggerChildren: 0.1,
+        },
+    },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { type: 'spring', stiffness: 100 }
+    },
+};
 
 interface Film {
     id: number;
@@ -102,287 +124,328 @@ export default function Edit({ film }: Props) {
         <AdminLayout title={`Edit Film: ${film.title}`} subtitle="Update film details">
             <Head title={`Edit Film: ${film.title}`} />
 
-            {/* Header with back button */}
-            <div className="mb-6 flex items-center justify-between">
-                <div className="flex items-center">
-                    <FilmIcon className="text-primary mr-2 h-6 w-6" />
-                    <h2 className="text-foreground text-lg font-semibold">Edit Film</h2>
-                </div>
-                <div className="flex space-x-3">
-                    <Link
-                        href={route('admin.films.show', { film: film.id })}
-                        className="border-border text-foreground hover:bg-muted flex items-center rounded-md border px-4 py-2 text-sm font-medium transition"
-                    >
-                        Cancel
-                    </Link>
-                    <Link
-                        href={route('admin.films.index')}
-                        className="border-border text-foreground hover:bg-muted flex items-center rounded-md border px-4 py-2 text-sm font-medium transition"
-                    >
-                        Back to Films
-                    </Link>
-                </div>
-            </div>
-
-            {/* Main form */}
-            <div className="border-border bg-card rounded-lg border shadow-sm">
-                <div className="border-border border-b p-4">
-                    <h3 className="text-foreground font-medium">Film Information</h3>
-                    <p className="text-muted-foreground text-sm">Update the details for {film.title}</p>
-                </div>
-
-                <div className="p-6">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <label htmlFor="title" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Title <span className="text-destructive">*</span>
-                                </label>
-                                <input
-                                    id="title"
-                                    value={data.title}
-                                    onChange={(e) => setData('title', e.target.value)}
-                                    className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                        errors.title ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                    }`}
-                                    required
-                                />
-                                {errors.title && <p className="text-destructive mt-1.5 text-sm">{errors.title}</p>}
-                            </div>
-
-                            <div>
-                                <label htmlFor="director" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Director
-                                </label>
-                                <input
-                                    id="director"
-                                    value={data.director}
-                                    onChange={(e) => setData('director', e.target.value)}
-                                    className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                        errors.director ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                    }`}
-                                />
-                                {errors.director && <p className="text-destructive mt-1.5 text-sm">{errors.director}</p>}
-                            </div>
-
-                            <div>
-                                <label htmlFor="genre" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Genre
-                                </label>
-                                <input
-                                    id="genre"
-                                    value={data.genre}
-                                    onChange={(e) => setData('genre', e.target.value)}
-                                    className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                        errors.genre ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                    }`}
-                                />
-                                {errors.genre && <p className="text-destructive mt-1.5 text-sm">{errors.genre}</p>}
-                            </div>
-
-                            <div>
-                                <label htmlFor="duration" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Duration (minutes) <span className="text-destructive">*</span>
-                                </label>
-                                <input
-                                    id="duration"
-                                    type="number"
-                                    value={data.duration}
-                                    onChange={(e) => setData('duration', e.target.value)}
-                                    className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                        errors.duration ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                    }`}
-                                    required
-                                />
-                                {errors.duration && <p className="text-destructive mt-1.5 text-sm">{errors.duration}</p>}
-                            </div>
-
-                            <div>
-                                <label htmlFor="release_date" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Release Date
-                                </label>
-                                <input
-                                    id="release_date"
-                                    type="date"
-                                    value={data.release_date}
-                                    onChange={(e) => setData('release_date', e.target.value)}
-                                    className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                        errors.release_date ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                    }`}
-                                />
-                                {errors.release_date && <p className="text-destructive mt-1.5 text-sm">{errors.release_date}</p>}
-                            </div>
-
-                            <div className="flex h-full items-center">
-                                <div className="flex items-center space-x-2">
-                                    <input
-                                        type="checkbox"
-                                        id="is_featured"
-                                        checked={data.is_featured}
-                                        onChange={(e) => setData('is_featured', e.target.checked)}
-                                        className="text-primary focus:ring-primary/30 border-input h-5 w-5 rounded"
-                                    />
-                                    <label htmlFor="is_featured" className="text-foreground text-sm font-medium">
-                                        Feature this film on homepage
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
+            <motion.div
+                className="container px-4 py-6 mx-auto"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                {/* Header with back button */}
+                <motion.div
+                    className="flex items-center justify-between mb-6"
+                    variants={itemVariants}
+                >
+                    <div className="flex items-center">
+                        <motion.div
+                            className="flex items-center justify-center w-10 h-10 mr-3 rounded-lg bg-primary/10"
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                            transition={{ type: "spring", stiffness: 400 }}
+                        >
+                            <FilmIcon className="w-6 h-6 text-primary" />
+                        </motion.div>
                         <div>
-                            <label htmlFor="description" className="text-foreground mb-1.5 block text-sm font-medium">
-                                Description <span className="text-destructive">*</span>
-                            </label>
-                            <textarea
-                                id="description"
-                                rows={4}
-                                value={data.description}
-                                onChange={(e) => setData('description', e.target.value)}
-                                className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                    errors.description ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                }`}
-                                required
-                            />
-                            {errors.description && <p className="text-destructive mt-1.5 text-sm">{errors.description}</p>}
+                            <h1 className="text-2xl font-bold text-foreground">Edit Film</h1>
+                            <p className="text-sm text-muted-foreground">{film.title}</p>
                         </div>
-
-                        <div className="border-border rounded-lg border p-6">
-                            <label className="text-foreground mb-3 block text-sm font-medium">Poster Image</label>
-
-                            {/* Tabs for upload type */}
-                            <div className="border-border mb-4 flex border-b">
-                                <button
-                                    type="button"
-                                    className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-                                        data.poster_type === 'unchanged'
-                                            ? 'border-primary text-primary'
-                                            : 'text-muted-foreground hover:text-foreground border-transparent'
-                                    }`}
-                                    onClick={() => handlePosterTypeChange('unchanged')}
-                                >
-                                    Keep Current
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-                                        data.poster_type === 'file'
-                                            ? 'border-primary text-primary'
-                                            : 'text-muted-foreground hover:text-foreground border-transparent'
-                                    }`}
-                                    onClick={() => handlePosterTypeChange('file')}
-                                >
-                                    <FilmIcon className="mr-1 inline-block h-4 w-4" />
-                                    Upload New
-                                </button>
-                                <button
-                                    type="button"
-                                    className={`border-b-2 px-4 py-2 text-sm font-medium transition-colors ${
-                                        data.poster_type === 'url'
-                                            ? 'border-primary text-primary'
-                                            : 'text-muted-foreground hover:text-foreground border-transparent'
-                                    }`}
-                                    onClick={() => handlePosterTypeChange('url')}
-                                >
-                                    <CalendarIcon className="mr-1 inline-block h-4 w-4" />
-                                    Use URL
-                                </button>
-                            </div>
-
-                            <div className="flex flex-col items-start space-y-4 md:flex-row md:space-y-0 md:space-x-6">
-                                <div className="w-full md:w-2/3">
-                                    {data.poster_type === 'file' ? (
-                                        <div className="border-border bg-muted/40 hover:bg-muted/70 relative flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-6 transition-colors">
-                                            <FilmIcon className="text-muted-foreground mb-2 h-10 w-10" />
-                                            <div className="text-center">
-                                                <p className="text-muted-foreground text-sm">Drop your image here, or</p>
-                                                <label
-                                                    htmlFor="poster_image"
-                                                    className="text-primary hover:text-primary/90 mt-2 block cursor-pointer text-sm font-medium"
-                                                >
-                                                    Browse files
-                                                    <input
-                                                        id="poster_image"
-                                                        name="poster_image"
-                                                        type="file"
-                                                        className="sr-only"
-                                                        onChange={handlePosterChange}
-                                                        accept="image/*"
-                                                    />
-                                                </label>
-                                            </div>
-                                            <p className="text-muted-foreground mt-2 text-xs">PNG, JPG, GIF up to 10MB</p>
-                                        </div>
-                                    ) : data.poster_type === 'url' ? (
-                                        <div>
-                                            <label htmlFor="poster_url" className="text-foreground mb-1.5 block text-sm font-medium">
-                                                Poster Image URL
-                                            </label>
-                                            <input
-                                                id="poster_url"
-                                                type="url"
-                                                value={data.poster_url}
-                                                onChange={handlePosterUrlChange}
-                                                placeholder="https://example.com/poster.jpg"
-                                                className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                                    errors.poster_url ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                                }`}
-                                            />
-                                            <p className="text-muted-foreground mt-1 text-xs">Enter the direct URL to an image file</p>
-                                        </div>
-                                    ) : (
-                                        <div className="bg-muted/20 rounded-lg p-6 text-center">
-                                            <p className="text-muted-foreground">Using current poster image. Select another option to change.</p>
-                                        </div>
-                                    )}
-                                    {errors.poster_image && <p className="text-destructive mt-1.5 text-sm">{errors.poster_image}</p>}
-                                    {errors.poster_url && <p className="text-destructive mt-1.5 text-sm">{errors.poster_url}</p>}
-                                    {errors.poster_type && <p className="text-destructive mt-1.5 text-sm">{errors.poster_type}</p>}
-                                </div>
-
-                                {posterPreview ? (
-                                    <div className="border-border relative flex h-48 w-32 flex-shrink-0 items-center justify-center overflow-hidden rounded-lg border">
-                                        <img src={posterPreview} alt="Poster preview" className="h-full w-full object-cover" />
-                                    </div>
-                                ) : (
-                                    <div className="border-border bg-muted/40 flex h-48 w-32 flex-shrink-0 items-center justify-center rounded-lg border">
-                                        <p className="text-muted-foreground text-xs">No poster</p>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-end space-x-3">
+                    </div>
+                    <div className="flex space-x-3">
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                             <Link
                                 href={route('admin.films.show', { film: film.id })}
-                                className="border-border text-foreground hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium focus:ring-2 focus:outline-none disabled:opacity-70"
+                                className="flex items-center px-4 py-2 text-sm font-medium transition border rounded-md border-border text-foreground hover:bg-muted"
                             >
                                 Cancel
                             </Link>
-                            <button
-                                type="submit"
-                                className="bg-primary hover:bg-primary/90 text-primary-foreground focus:ring-primary/30 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium transition focus:ring-2 focus:outline-none disabled:opacity-70"
-                                disabled={processing}
+                        </motion.div>
+                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                            <Link
+                                href={route('admin.films.index')}
+                                className="flex items-center px-4 py-2 text-sm font-medium transition border rounded-md border-border text-foreground hover:bg-muted"
                             >
-                                {processing ? (
-                                    <>
-                                        <svg className="mr-2 h-4 w-4 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            ></path>
-                                        </svg>
-                                        Saving...
-                                    </>
-                                ) : (
-                                    'Update Film'
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                                Back to Films
+                            </Link>
+                        </motion.div>
+                    </div>
+                </motion.div>
+
+                {/* Main form */}
+                <motion.div
+                    className="overflow-hidden border rounded-lg shadow-sm border-border bg-card"
+                    variants={itemVariants}
+                    whileHover={{ boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)" }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <div className="p-4 border-b border-border">
+                        <h3 className="font-medium text-foreground">Film Information</h3>
+                        <p className="text-sm text-muted-foreground">Update the details for {film.title}</p>
+                    </div>
+
+                    <div className="p-6">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            <motion.div
+                                className="grid grid-cols-1 gap-6 md:grid-cols-2"
+                                variants={itemVariants}
+                            >
+                                <motion.div
+                                    whileHover={{ y: -5 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
+                                >
+                                    <label htmlFor="title" className="block mb-1.5 text-sm font-medium text-foreground">
+                                        Title <span className="text-destructive">*</span>
+                                    </label>
+                                    <input
+                                        id="title"
+                                        value={data.title}
+                                        onChange={(e) => setData('title', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-md bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.title ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                            }`}
+                                        required
+                                    />
+                                    {errors.title && <p className="mt-1.5 text-sm text-destructive">{errors.title}</p>}
+                                </motion.div>
+
+                                <motion.div
+                                    whileHover={{ y: -5 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
+                                >
+                                    <label htmlFor="director" className="block mb-1.5 text-sm font-medium text-foreground">
+                                        Director
+                                    </label>
+                                    <input
+                                        id="director"
+                                        value={data.director}
+                                        onChange={(e) => setData('director', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-md bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.director ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                            }`}
+                                    />
+                                    {errors.director && <p className="mt-1.5 text-sm text-destructive">{errors.director}</p>}
+                                </motion.div>
+
+                                <motion.div
+                                    whileHover={{ y: -5 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
+                                >
+                                    <label htmlFor="genre" className="block mb-1.5 text-sm font-medium text-foreground">
+                                        Genre
+                                    </label>
+                                    <input
+                                        id="genre"
+                                        value={data.genre}
+                                        onChange={(e) => setData('genre', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-md bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.genre ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                            }`}
+                                    />
+                                    {errors.genre && <p className="mt-1.5 text-sm text-destructive">{errors.genre}</p>}
+                                </motion.div>
+
+                                <motion.div
+                                    whileHover={{ y: -5 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
+                                >
+                                    <label htmlFor="duration" className="block mb-1.5 text-sm font-medium text-foreground">
+                                        Duration (minutes) <span className="text-destructive">*</span>
+                                    </label>
+                                    <input
+                                        id="duration"
+                                        type="number"
+                                        value={data.duration}
+                                        onChange={(e) => setData('duration', e.target.value)}
+                                        className={`w-full px-3 py-2 border rounded-md bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.duration ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                            }`}
+                                        required
+                                    />
+                                    {errors.duration && <p className="mt-1.5 text-sm text-destructive">{errors.duration}</p>}
+                                </motion.div>
+
+                                <motion.div
+                                    whileHover={{ y: -5 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
+                                >
+                                    <label htmlFor="release_date" className="block mb-1.5 text-sm font-medium text-foreground">
+                                        Release Date
+                                    </label>
+                                    <div className="relative">
+                                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                            <CalendarIcon className="w-5 h-5 text-muted-foreground" />
+                                        </div>
+                                        <input
+                                            id="release_date"
+                                            type="date"
+                                            value={data.release_date}
+                                            onChange={(e) => setData('release_date', e.target.value)}
+                                            className={`w-full py-2 pl-10 pr-3 border rounded-md bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.release_date ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                                }`}
+                                        />
+                                    </div>
+                                    {errors.release_date && <p className="mt-1.5 text-sm text-destructive">{errors.release_date}</p>}
+                                </motion.div>
+
+                                <motion.div
+                                    className="flex items-center h-full"
+                                    whileHover={{ y: -5 }}
+                                    transition={{ type: "spring", stiffness: 300 }}
+                                >
+                                    <div className="flex items-center space-x-2">
+                                        <motion.input
+                                            whileTap={{ scale: 0.9 }}
+                                            type="checkbox"
+                                            id="is_featured"
+                                            checked={data.is_featured}
+                                            onChange={(e) => setData('is_featured', e.target.checked)}
+                                            className="w-5 h-5 rounded border-input focus:ring-primary/30 text-primary"
+                                        />
+                                        <label htmlFor="is_featured" className="text-sm font-medium text-foreground">
+                                            Feature this film on homepage
+                                        </label>
+                                    </div>
+                                </motion.div>
+                            </motion.div>
+
+                            <motion.div
+                                variants={itemVariants}
+                                whileHover={{ y: -5 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                            >
+                                <label htmlFor="description" className="block mb-1.5 text-sm font-medium text-foreground">
+                                    Description <span className="text-destructive">*</span>
+                                </label>
+                                <textarea
+                                    id="description"
+                                    rows={4}
+                                    value={data.description}
+                                    onChange={(e) => setData('description', e.target.value)}
+                                    className={`w-full px-3 py-2 border rounded-md bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${errors.description ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                        }`}
+                                    required
+                                />
+                                {errors.description && <p className="mt-1.5 text-sm text-destructive">{errors.description}</p>}
+                            </motion.div>
+
+                            <motion.div
+                                className="p-6 border rounded-lg border-border"
+                                variants={itemVariants}
+                                whileHover={{ y: -5 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                            >
+                                <label className="block mb-3 text-sm font-medium text-foreground">Poster Image</label>
+
+                                <div className="flex flex-col gap-4 sm:flex-row">
+                                    <div className="space-y-2">
+                                        <p className="text-sm text-muted-foreground">Choose how to update the poster:</p>
+                                        <div className="flex flex-col space-y-2">
+                                            <div className="flex items-center">
+                                                <input
+                                                    id="poster_unchanged"
+                                                    type="radio"
+                                                    name="poster_type"
+                                                    className="w-4 h-4 border-input text-primary focus:ring-primary"
+                                                    checked={data.poster_type === 'unchanged'}
+                                                    onChange={() => handlePosterTypeChange('unchanged')}
+                                                />
+                                                <label htmlFor="poster_unchanged" className="ml-2 text-sm text-foreground">
+                                                    Keep current poster
+                                                </label>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <input
+                                                    id="poster_file"
+                                                    type="radio"
+                                                    name="poster_type"
+                                                    className="w-4 h-4 border-input text-primary focus:ring-primary"
+                                                    checked={data.poster_type === 'file'}
+                                                    onChange={() => handlePosterTypeChange('file')}
+                                                />
+                                                <label htmlFor="poster_file" className="ml-2 text-sm text-foreground">
+                                                    Upload new image
+                                                </label>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <input
+                                                    id="poster_url"
+                                                    type="radio"
+                                                    name="poster_type"
+                                                    className="w-4 h-4 border-input text-primary focus:ring-primary"
+                                                    checked={data.poster_type === 'url'}
+                                                    onChange={() => handlePosterTypeChange('url')}
+                                                />
+                                                <label htmlFor="poster_url" className="ml-2 text-sm text-foreground">
+                                                    Use image URL
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        {data.poster_type === 'file' && (
+                                            <div className="mt-3">
+                                                <input
+                                                    type="file"
+                                                    onChange={handlePosterChange}
+                                                    accept="image/*"
+                                                    className="w-full text-sm border rounded-md bg-background text-foreground border-input focus:outline-none"
+                                                />
+                                                {errors.poster_image && <p className="mt-1 text-sm text-destructive">{errors.poster_image}</p>}
+                                            </div>
+                                        )}
+
+                                        {data.poster_type === 'url' && (
+                                            <div className="mt-3">
+                                                <input
+                                                    type="url"
+                                                    placeholder="https://example.com/poster.jpg"
+                                                    value={data.poster_url}
+                                                    onChange={handlePosterUrlChange}
+                                                    className="w-full px-3 py-2 border rounded-md bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground"
+                                                />
+                                                {errors.poster_url && <p className="mt-1 text-sm text-destructive">{errors.poster_url}</p>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {posterPreview && (
+                                        <motion.div
+                                            className="flex items-center justify-center"
+                                            initial={{ opacity: 0, scale: 0.8 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            transition={{ type: "spring", stiffness: 300 }}
+                                        >
+                                            <div className="relative w-32 h-40 overflow-hidden rounded-md shadow-md">
+                                                <img
+                                                    src={posterPreview}
+                                                    alt="Poster preview"
+                                                    className="object-cover w-full h-full"
+                                                />
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </div>
+                            </motion.div>
+
+                            {/* Form actions */}
+                            <motion.div
+                                className="flex justify-end space-x-3 pt-6"
+                                variants={itemVariants}
+                            >
+                                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                    <Link
+                                        href={route('admin.films.show', { film: film.id })}
+                                        className="inline-flex items-center px-4 py-2 text-sm font-medium transition border rounded-md border-border text-foreground hover:bg-muted"
+                                    >
+                                        Cancel
+                                    </Link>
+                                </motion.div>
+                                <motion.button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="inline-flex items-center px-4 py-2 text-sm font-medium transition shadow-sm rounded-md bg-primary text-white hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                >
+                                    {processing ? 'Saving...' : 'Save Changes'}
+                                </motion.button>
+                            </motion.div>
+                        </form>
+                    </div>
+                </motion.div>
+            </motion.div>
         </AdminLayout>
     );
 }

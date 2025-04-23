@@ -53,6 +53,11 @@ class ReportController extends Controller
             )
             ->where('payments.status', 'completed')
             ->where('payments.created_at', '>=', $startDate)
+            ->when($request->film_id, function ($query, $filmId) {
+                $query->join('reservations', 'payments.reservation_id', '=', 'reservations.id')
+                      ->join('screenings', 'reservations.screening_id', '=', 'screenings.id')
+                      ->where('screenings.film_id', $filmId);
+            })
             ->groupBy('date')
             ->orderBy('date')
             ->get();
@@ -76,10 +81,18 @@ class ReportController extends Controller
             ->orderByDesc('revenue')
             ->get();
 
-        // Get total revenue
-        $totalRevenue = Payment::where('payments.status', 'completed')
-            ->where('payments.created_at', '>=', $startDate)
-            ->sum('amount');
+        // Get total revenue with the same film filter if specified
+        $totalRevenueQuery = Payment::where('payments.status', 'completed')
+            ->where('payments.created_at', '>=', $startDate);
+
+        if ($request->film_id) {
+            $totalRevenueQuery->join('reservations', 'payments.reservation_id', '=', 'reservations.id')
+                              ->join('screenings', 'reservations.screening_id', '=', 'screenings.id')
+                              ->join('films', 'screenings.film_id', '=', 'films.id')
+                              ->where('films.id', $request->film_id);
+        }
+
+        $totalRevenue = $totalRevenueQuery->sum('payments.amount');
 
         $films = Film::orderBy('title')->get(['id', 'title']);
 

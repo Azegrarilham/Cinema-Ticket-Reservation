@@ -1,6 +1,10 @@
+import { Pagination } from '@/components/ui/pagination';
+import DeletePopup from '@/components/ui/DeletePopup';
+import MotionLink from '@/components/ui/motion-link';
 import AdminLayout from '@/layouts/AdminLayout';
-import { CalendarIcon, CreditCardIcon, EyeIcon, FilmIcon, MagnifyingGlassIcon, TrashIcon, UserIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon, CreditCardIcon, EyeIcon, FilmIcon, MagnifyingGlassIcon, TicketIcon, TrashIcon, UserIcon } from '@heroicons/react/24/outline';
 import { Head, Link, router, useForm } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 
 interface Film {
@@ -65,6 +69,30 @@ interface Props {
     statuses: string[];
 }
 
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.05
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 300,
+            damping: 24
+        }
+    }
+};
+
 export default function Index({ reservations, films, screenings, filters, statuses }: Props) {
     const { data, setData, get, processing } = useForm({
         film_id: filters.film_id || '',
@@ -75,11 +103,68 @@ export default function Index({ reservations, films, screenings, filters, status
 
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [reservationToDelete, setReservationToDelete] = useState<number | null>(null);
+    const [deletingReservation, setDeletingReservation] = useState<Reservation | null>(null);
+    const [isProcessingDelete, setIsProcessingDelete] = useState(false);
 
+    // Use React's useEffect to trigger filtering when form data changes
+    React.useEffect(() => {
+        // Don't run on initial mount
+        const currentFilters = {
+            film_id: data.film_id,
+            screening_id: data.screening_id,
+            status: data.status,
+            date: data.date
+        };
+
+        if (JSON.stringify(filters) !== JSON.stringify(currentFilters)) {
+            // Use debounce to avoid rapid-fire requests when multiple filters change
+            const timeoutId = setTimeout(() => {
+                // Double check that the component is still mounted before making the request
+                get(route('admin.reservations.index'), {
+                    preserveState: true,
+                    replace: true,
+                });
+            }, 300);
+
+            return () => clearTimeout(timeoutId);
+        }
+    }, [data.film_id, data.screening_id, data.status, data.date]);
+
+    // Handle film filter change with debounce handling
+    const handleFilmChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const value = e.target.value;
+
+        // First set the film ID
+        setData('film_id', value);
+
+        // Then clear the screening ID - this needs to happen after setting film_id
+        // but before the filtering happens
+        if (data.screening_id) {
+            setData('screening_id', '');
+        }
+    };
+
+    // Handle screening filter change
+    const handleScreeningChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setData('screening_id', e.target.value);
+    };
+
+    // Handle status filter change
+    const handleStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setData('status', e.target.value);
+    };
+
+    // Handle date filter change
+    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setData('date', e.target.value);
+    };
+
+    // Keep the form submission handler for compatibility
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         get(route('admin.reservations.index'), {
             preserveState: true,
+            replace: true,
         });
     };
 
@@ -89,7 +174,6 @@ export default function Index({ reservations, films, screenings, filters, status
             weekday: 'short',
             month: 'short',
             day: 'numeric',
-            year: 'numeric',
         });
     };
 
@@ -122,23 +206,31 @@ export default function Index({ reservations, films, screenings, filters, status
         }).format(numericAmount);
     };
 
-    const handleDelete = (id: number) => {
-        setReservationToDelete(id);
+    const handleDelete = (reservation: Reservation) => {
+        setDeletingReservation(reservation);
+        setReservationToDelete(reservation.id);
         setIsDeleteModalOpen(true);
     };
 
     const confirmDelete = () => {
         if (reservationToDelete) {
+            setIsProcessingDelete(true);
             router.delete(route('admin.reservations.destroy', { reservation: reservationToDelete }), {
                 onSuccess: () => {
                     setIsDeleteModalOpen(false);
                     setReservationToDelete(null);
+                    setDeletingReservation(null);
+                    setIsProcessingDelete(false);
+                },
+                onError: () => {
+                    setIsProcessingDelete(false);
                 },
             });
         }
     };
 
     const handleClearFilters = () => {
+        // Clear all filters in a consistent way
         setData({
             film_id: '',
             screening_id: '',
@@ -147,16 +239,38 @@ export default function Index({ reservations, films, screenings, filters, status
         });
         get(route('admin.reservations.index'), {
             preserveState: true,
+            replace: true,
         });
     };
 
     const getStatusBadgeClass = (status: string) => {
-        switch (status) {
+        switch (status.toLowerCase()) {
             case 'confirmed':
                 return 'bg-success/20 text-success';
             case 'pending':
+            case 'waiting':
                 return 'bg-warning/20 text-warning';
             case 'cancelled':
+                return 'bg-destructive/20 text-destructive';
+            case 'completed':
+                return 'bg-primary/20 text-primary';
+            default:
+                return 'bg-muted text-muted-foreground';
+        }
+    };
+
+    const getPaymentStatusBadgeClass = (payment: Payment | null) => {
+        if (!payment) return 'bg-muted text-muted-foreground';
+
+        switch (payment.status.toLowerCase()) {
+            case 'paid':
+            case 'completed':
+                return 'bg-success/20 text-success';
+            case 'pending':
+            case 'waiting':
+                return 'bg-warning/20 text-warning';
+            case 'failed':
+            case 'declined':
                 return 'bg-destructive/20 text-destructive';
             default:
                 return 'bg-muted text-muted-foreground';
@@ -164,235 +278,257 @@ export default function Index({ reservations, films, screenings, filters, status
     };
 
     return (
-        <AdminLayout title="Reservations Management" subtitle="Manage customer reservations">
+        <AdminLayout title="Reservations Management" subtitle="Manage your cinema's customer bookings">
             <Head title="Reservations Management" />
 
-            {/* Header with actions */}
-            <div className="mb-6 flex items-center justify-between">
+            {/* Actions header */}
+            <motion.div
+                className="flex items-center justify-between mb-6"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+            >
                 <div className="flex items-center">
-                    <CreditCardIcon className="text-primary mr-2 h-6 w-6" />
-                    <h2 className="text-foreground text-lg font-semibold">Reservations</h2>
-                    <span className="bg-muted ml-3 rounded-md px-2 py-1 text-xs font-medium">{reservations.total} total</span>
+                    <motion.div
+                        whileHover={{ rotate: 10 }}
+                        className="flex items-center justify-center w-10 h-10 mr-2 rounded-lg bg-primary/10"
+                    >
+                        <TicketIcon className="w-6 h-6 text-primary" />
+                    </motion.div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-foreground">Customer Reservations</h2>
+                        <span className="px-2 py-1 ml-1 text-xs font-medium rounded-md bg-muted">{reservations.total} total</span>
+                    </div>
                 </div>
-            </div>
+            </motion.div>
 
-            {/* Search and filters */}
-            <div className="border-border bg-card mb-6 rounded-lg border shadow-sm">
-                <div className="p-4">
-                    <form onSubmit={handleSearch} className="space-y-4">
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
-                            <div>
-                                <label htmlFor="film_id" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Filter by Film
-                                </label>
-                                <select
-                                    id="film_id"
-                                    value={data.film_id}
-                                    onChange={(e) => {
-                                        setData('film_id', e.target.value);
-                                        setData('screening_id', '');
-                                    }}
-                                    className="focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2"
-                                >
-                                    <option value="">All Films</option>
-                                    {films.map((film) => (
-                                        <option key={film.id} value={film.id}>
-                                            {film.title}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
+            {/* Filters */}
+            <motion.div
+                className="mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.5 }}
+            >
+                <form onSubmit={handleSearch} className="p-4 space-y-4 border rounded-lg shadow-sm bg-card border-border">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                        <div>
+                            <label htmlFor="film_id" className="block mb-1 text-sm font-medium text-foreground">
+                                Film
+                            </label>
+                            <select
+                                id="film_id"
+                                value={data.film_id}
+                                onChange={handleFilmChange}
+                                className="block w-full px-3 py-2 border rounded-md shadow-sm focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input"
+                            >
+                                <option value="">All Films</option>
+                                {films.map((film) => (
+                                    <option key={film.id} value={film.id}>
+                                        {film.title}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
 
-                            <div>
-                                <label htmlFor="screening_id" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Filter by Screening
-                                </label>
-                                <select
-                                    id="screening_id"
-                                    value={data.screening_id}
-                                    onChange={(e) => setData('screening_id', e.target.value)}
-                                    className="focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2"
-                                    disabled={!data.film_id || screenings.length === 0}
-                                >
-                                    <option value="">All Screenings</option>
-                                    {screenings.map((screening) => (
+                        <div>
+                            <label htmlFor="screening_id" className="block mb-1 text-sm font-medium text-foreground">
+                                Screening
+                            </label>
+                            <select
+                                id="screening_id"
+                                value={data.screening_id}
+                                onChange={handleScreeningChange}
+                                className="block w-full px-3 py-2 border rounded-md shadow-sm focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input"
+                                disabled={!data.film_id}
+                            >
+                                <option value="">All Screenings</option>
+                                {screenings
+                                    .filter(s => !data.film_id || (s.id && data.film_id))
+                                    .map((screening) => (
                                         <option key={screening.id} value={screening.id}>
                                             {formatDate(screening.start_time)} {formatTime(screening.start_time)}
                                         </option>
                                     ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label htmlFor="status" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Filter by Status
-                                </label>
-                                <select
-                                    id="status"
-                                    value={data.status}
-                                    onChange={(e) => setData('status', e.target.value)}
-                                    className="focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2"
-                                >
-                                    <option value="">All Statuses</option>
-                                    {statuses.map((status) => (
-                                        <option key={status} value={status}>
-                                            {status.charAt(0).toUpperCase() + status.slice(1)}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            <div>
-                                <label htmlFor="date" className="text-foreground mb-1.5 block text-sm font-medium">
-                                    Filter by Date
-                                </label>
-                                <input
-                                    id="date"
-                                    type="date"
-                                    value={data.date}
-                                    onChange={(e) => setData('date', e.target.value)}
-                                    className="focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2"
-                                />
-                            </div>
+                            </select>
                         </div>
 
-                        <div className="flex items-center space-x-3">
-                            <button
-                                type="submit"
-                                className="bg-primary hover:bg-primary/90 focus:ring-primary/30 flex items-center rounded-md px-4 py-2 text-sm font-medium text-white transition focus:ring-2 focus:outline-none disabled:opacity-70"
-                                disabled={processing}
+                        <div>
+                            <label htmlFor="status" className="block mb-1 text-sm font-medium text-foreground">
+                                Status
+                            </label>
+                            <select
+                                id="status"
+                                value={data.status}
+                                onChange={handleStatusChange}
+                                className="block w-full px-3 py-2 border rounded-md shadow-sm focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input"
                             >
-                                <MagnifyingGlassIcon className="mr-1.5 h-4 w-4" />
-                                Filter
-                            </button>
-                            {(data.film_id || data.screening_id || data.status || data.date) && (
-                                <button
-                                    type="button"
-                                    onClick={handleClearFilters}
-                                    className="border-border text-foreground hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium transition"
-                                >
-                                    Clear Filters
-                                </button>
-                            )}
+                                <option value="">All Statuses</option>
+                                {statuses.map((status) => (
+                                    <option key={status} value={status}>
+                                        {status.charAt(0).toUpperCase() + status.slice(1)}
+                                    </option>
+                                ))}
+                            </select>
                         </div>
-                    </form>
-                </div>
-            </div>
 
-            {/* Reservations list table */}
-            <div className="overflow-hidden rounded-lg shadow">
-                <div className="border-border bg-card relative overflow-x-auto border">
-                    <table className="divide-border min-w-full divide-y">
+                        <div>
+                            <label htmlFor="date" className="block mb-1 text-sm font-medium text-foreground">
+                                Reservation Date
+                            </label>
+                            <input
+                                id="date"
+                                type="date"
+                                value={data.date}
+                                onChange={handleDateChange}
+                                className="block w-full px-3 py-2 border rounded-md shadow-sm focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input"
+                            />
+                        </div>
+                    </div>
+
+                    {(data.film_id || data.screening_id || data.status || data.date) && (
+                        <div className="flex justify-end">
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                type="button"
+                                onClick={handleClearFilters}
+                                className="px-4 py-2 text-sm font-medium transition border rounded-md border-border hover:bg-muted focus:outline-none focus:ring-2 focus:ring-primary/30"
+                            >
+                                Clear Filters
+                            </motion.button>
+                        </div>
+                    )}
+                </form>
+            </motion.div>
+
+            {/* Reservations Table */}
+            <motion.div
+                className="overflow-hidden transition-shadow rounded-lg shadow-md hover:shadow-lg"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                <div className="relative overflow-x-auto border border-border bg-card">
+                    <table className="min-w-full divide-y divide-border">
                         <thead className="bg-muted">
                             <tr>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                                    ID
-                                </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                                    Film / Screening
-                                </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Customer
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                                    Date Created
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
+                                    Film
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
+                                    Screening
+                                </th>
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Seats
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
-                                    Total
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
+                                    Payment
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Status
                                 </th>
-                                <th scope="col" className="text-muted-foreground px-6 py-3 text-left text-xs font-medium tracking-wider uppercase">
+                                <th scope="col" className="px-6 py-3 text-xs font-medium tracking-wider text-left uppercase text-muted-foreground">
                                     Actions
                                 </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-border bg-card divide-y">
+                        <tbody className="divide-y divide-border bg-card">
                             {reservations.data.length > 0 ? (
-                                reservations.data.map((reservation) => (
-                                    <tr key={reservation.id} className="hover:bg-muted/40 transition-colors">
-                                        <td className="text-foreground px-6 py-4 text-sm font-medium whitespace-nowrap">#{reservation.id}</td>
+                                reservations.data.map((reservation, index) => (
+                                    <motion.tr
+                                        key={reservation.id}
+                                        className="transition-colors hover:bg-muted/40"
+                                        variants={itemVariants}
+                                        custom={index}
+                                    >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <FilmIcon className="text-primary mr-2 h-5 w-5" />
+                                                <div className={`flex items-center justify-center w-8 h-8 rounded-full mr-3 ${reservation.user ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground'
+                                                    }`}>
+                                                    <UserIcon className="w-4 h-4" />
+                                                </div>
                                                 <div>
-                                                    <div className="text-foreground text-sm font-medium">{reservation.screening.film.title}</div>
-                                                    <div className="text-muted-foreground flex items-center text-xs">
-                                                        <CalendarIcon className="mr-1 h-3 w-3" />
-                                                        {formatDate(reservation.screening.start_time)} {formatTime(reservation.screening.start_time)}
+                                                    <div className="text-sm font-medium text-foreground">
+                                                        {reservation.user?.name || reservation.guest_name || 'Anonymous'}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {reservation.user?.email || reservation.guest_email || 'No email'}
                                                     </div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <UserIcon className="text-muted-foreground mr-2 h-5 w-5" />
-                                                <div>
-                                                    <div className="text-foreground text-sm font-medium">
-                                                        {reservation.user ? reservation.user.name : reservation.guest_name || 'Guest'}
-                                                    </div>
-                                                    <div className="text-muted-foreground text-xs">
-                                                        {reservation.user ? reservation.user.email : reservation.guest_email || 'No email'}
-                                                    </div>
-                                                </div>
+                                                <FilmIcon className="w-4 h-4 mr-2 text-primary" />
+                                                <span className="text-sm text-foreground">{reservation.screening.film.title}</span>
                                             </div>
                                         </td>
-                                        <td className="text-foreground px-6 py-4 text-sm whitespace-nowrap">{formatDate(reservation.created_at)}</td>
-                                        <td className="text-foreground px-6 py-4 text-center text-sm whitespace-nowrap">{reservation.seats_count}</td>
-                                        <td className="text-foreground px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                            {formatCurrency(reservation.total_price)}
-                                        </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <span
-                                                className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeClass(
-                                                    reservation.status,
-                                                )}`}
-                                            >
-                                                {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
+                                            <div className="text-sm text-foreground">{formatDate(reservation.screening.start_time)}</div>
+                                            <div className="flex items-center text-xs text-muted-foreground">
+                                                <CalendarIcon className="w-3 h-3 mr-1" />
+                                                {formatTime(reservation.screening.start_time)}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-foreground whitespace-nowrap">
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                                                {reservation.seats_count} {reservation.seats_count === 1 ? 'seat' : 'seats'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap">
-                                            <div className="flex space-x-2">
-                                                <Link
+                                            <div className="text-sm font-medium text-foreground">
+                                                {formatCurrency(reservation.total_price)}
+                                            </div>
+                                            {reservation.payment && (
+                                                <div className="flex items-center mt-1">
+                                                    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs ${getPaymentStatusBadgeClass(reservation.payment)}`}>
+                                                        {reservation.payment.status}
+                                                    </span>
+                                                </div>
+                                            )}
+                                        </td>
+                                        <td className="px-6 py-4 whitespace-nowrap">
+                                            <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${getStatusBadgeClass(reservation.status)}`}>
+                                                {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
+                                            </span>
+                                        </td>
+                                        <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
+                                            <div className="flex space-x-3">
+                                                <MotionLink
                                                     href={route('admin.reservations.show', { reservation: reservation.id })}
-                                                    className="text-primary hover:text-primary/80 transition"
-                                                    title="View"
+                                                    title="View Details"
+                                                    icon
+                                                    variant="primary"
                                                 >
-                                                    <EyeIcon className="h-5 w-5" />
-                                                </Link>
-                                                <button
-                                                    onClick={() => handleDelete(reservation.id)}
-                                                    className="text-destructive hover:text-destructive/80 transition"
-                                                    title="Delete"
-                                                >
-                                                    <TrashIcon className="h-5 w-5" />
-                                                </button>
+                                                    <EyeIcon className="w-5 h-5" />
+                                                </MotionLink>
+                                                <motion.div whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}>
+                                                    <button
+                                                        onClick={() => handleDelete(reservation)}
+                                                        className="transition text-destructive hover:text-destructive/80"
+                                                        title="Cancel Reservation"
+                                                    >
+                                                        <TrashIcon className="w-5 h-5" />
+                                                    </button>
+                                                </motion.div>
                                             </div>
                                         </td>
-                                    </tr>
+                                    </motion.tr>
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={8} className="px-6 py-12 text-center">
+                                    <td colSpan={7} className="px-6 py-12 text-center">
                                         <div className="flex flex-col items-center justify-center">
-                                            <CreditCardIcon className="text-muted-foreground mb-4 h-12 w-12" />
-                                            <p className="text-muted-foreground mb-4 text-sm">
+                                            <TicketIcon className="w-12 h-12 mb-3 text-muted-foreground" />
+                                            <h3 className="mb-1 text-lg font-medium text-foreground">No reservations found</h3>
+                                            <p className="text-sm text-muted-foreground">
                                                 {data.film_id || data.screening_id || data.status || data.date
-                                                    ? 'No reservations match your filter criteria.'
-                                                    : 'No reservations have been made yet.'}
+                                                    ? 'Try changing your filter criteria'
+                                                    : 'No reservations have been made yet'}
                                             </p>
-                                            {(data.film_id || data.screening_id || data.status || data.date) && (
-                                                <button
-                                                    onClick={handleClearFilters}
-                                                    className="bg-primary hover:bg-primary/90 focus:ring-primary/30 inline-flex items-center rounded-md px-4 py-2 text-sm font-medium text-white transition focus:ring-2 focus:outline-none"
-                                                >
-                                                    Clear Filters
-                                                </button>
-                                            )}
                                         </div>
                                     </td>
                                 </tr>
@@ -400,91 +536,42 @@ export default function Index({ reservations, films, screenings, filters, status
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Pagination */}
-            {reservations.data.length > 0 && reservations.last_page > 1 && (
-                <div className="mt-6 flex items-center justify-between border-t pt-6">
-                    <div className="text-muted-foreground text-sm">
-                        Showing <span className="text-foreground font-medium">{reservations.current_page}</span> of{' '}
-                        <span className="text-foreground font-medium">{reservations.last_page}</span> pages
+            {reservations.data.length > 0 && (
+                <motion.div
+                    className="flex items-center justify-between mt-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                    <div className="flex items-center text-sm text-muted-foreground">
+                        Showing <span className="mx-1 font-medium">{(reservations.current_page - 1) * 15 + 1}</span>
+                        to <span className="mx-1 font-medium">{Math.min(reservations.current_page * 15, reservations.total)}</span>
+                        of <span className="mx-1 font-medium">{reservations.total}</span> reservations
                     </div>
-                    <div className="flex space-x-2">
-                        {reservations.links.map((link, i) => {
-                            if (link.label === '&laquo; Previous') {
-                                return (
-                                    <Link
-                                        key={i}
-                                        href={link.url || '#'}
-                                        className={`border-border hover:bg-muted flex items-center rounded-md border px-3 py-1 text-sm ${
-                                            !link.url ? 'pointer-events-none opacity-50' : ''
-                                        }`}
-                                    >
-                                        Previous
-                                    </Link>
-                                );
-                            } else if (link.label === 'Next &raquo;') {
-                                return (
-                                    <Link
-                                        key={i}
-                                        href={link.url || '#'}
-                                        className={`border-border hover:bg-muted flex items-center rounded-md border px-3 py-1 text-sm ${
-                                            !link.url ? 'pointer-events-none opacity-50' : ''
-                                        }`}
-                                    >
-                                        Next
-                                    </Link>
-                                );
-                            } else {
-                                return (
-                                    <Link
-                                        key={i}
-                                        href={link.url || '#'}
-                                        className={`border-border flex h-8 w-8 items-center justify-center rounded-md border text-sm ${
-                                            link.active ? 'bg-primary text-primary-foreground' : 'hover:bg-muted text-foreground'
-                                        } ${!link.url ? 'pointer-events-none opacity-50' : ''}`}
-                                    >
-                                        {link.label}
-                                    </Link>
-                                );
-                            }
-                        })}
-                    </div>
-                </div>
+                    <Pagination
+                        links={reservations.links}
+                        currentPage={reservations.current_page}
+                        totalPages={reservations.last_page}
+                    />
+                </motion.div>
             )}
 
-            {/* Delete confirmation modal */}
-            {isDeleteModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-card w-full max-w-md rounded-lg p-6 shadow-lg">
-                        <div className="mb-4 flex items-center">
-                            <div className="bg-destructive/10 text-destructive flex h-10 w-10 items-center justify-center rounded-full">
-                                <TrashIcon className="h-5 w-5" />
-                            </div>
-                            <h3 className="text-foreground ml-3 text-lg font-medium">Delete Reservation</h3>
-                        </div>
-
-                        <p className="text-muted-foreground mb-6">
-                            Are you sure you want to delete this reservation? This action cannot be undone and will release all reserved seats.
-                        </p>
-
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={() => setIsDeleteModalOpen(false)}
-                                className="border-border text-foreground hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium focus:outline-none"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md px-4 py-2 text-sm font-medium focus:outline-none"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* Delete Confirmation Modal */}
+            <DeletePopup
+                isOpen={isDeleteModalOpen && !!deletingReservation}
+                onClose={() => setIsDeleteModalOpen(false)}
+                onDelete={confirmDelete}
+                title="Cancel Reservation"
+                itemName={deletingReservation?.screening.film.title}
+                description={deletingReservation ?
+                    `Are you sure you want to cancel this reservation for {itemName} on ${formatDate(deletingReservation.screening.start_time)}? This action cannot be undone and all seats will be released.` :
+                    "Are you sure you want to cancel this reservation? This action cannot be undone."
+                }
+                processing={isProcessingDelete}
+            />
         </AdminLayout>
     );
 }

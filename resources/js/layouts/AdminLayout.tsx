@@ -6,13 +6,19 @@ import ChevronDownIcon from '@heroicons/react/24/outline/ChevronDownIcon.js';
 import CogIcon from '@heroicons/react/24/outline/CogIcon.js';
 import FilmIcon from '@heroicons/react/24/outline/FilmIcon.js';
 import HomeIcon from '@heroicons/react/24/outline/HomeIcon.js';
+import MoonIcon from '@heroicons/react/24/outline/MoonIcon.js';
+import SunIcon from '@heroicons/react/24/outline/SunIcon.js';
 import TicketIcon from '@heroicons/react/24/outline/TicketIcon.js';
 import UserIcon from '@heroicons/react/24/outline/UserIcon.js';
 import XMarkIcon from '@heroicons/react/24/outline/XMarkIcon.js';
 import { Link, usePage, router } from '@inertiajs/react';
-import { PopcornIcon } from 'lucide-react';
+import { Clapperboard, Sparkles } from 'lucide-react';
 import { useEffect, useState, type ReactNode } from 'react';
 import axios from 'axios';
+
+// Add motion for animations
+import { motion } from 'framer-motion';
+import MotionLink from '@/components/ui/motion-link';
 
 interface AdminLayoutProps {
     children: ReactNode;
@@ -43,6 +49,8 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
     const [isScrolled, setIsScrolled] = useState(false);
     const [refreshingAuth, setRefreshingAuth] = useState(false);
     const [refreshAttempts, setRefreshAttempts] = useState(0);
+    const [theme, setTheme] = useState('dark');
+    const [loaded, setLoaded] = useState(false);
 
     // Get authenticated user from page props - handle different possible structures safely
     const pageProps = usePage().props as PageProps;
@@ -93,10 +101,33 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
         }
     }, [hasValidUserName, refreshAttempts]);
 
-    // Always use dark mode
+    // Toggle theme function
+    const toggleTheme = () => {
+        const newTheme = theme === 'dark' ? 'light' : 'dark';
+        setTheme(newTheme);
+
+        if (newTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        localStorage.setItem('adminTheme', newTheme);
+    };
+
+    // Initialize theme from localStorage
     useEffect(() => {
-        document.documentElement.classList.add('dark');
-        localStorage.setItem('darkMode', 'true');
+        const savedTheme = localStorage.getItem('adminTheme') || 'dark';
+        setTheme(savedTheme);
+
+        if (savedTheme === 'dark') {
+            document.documentElement.classList.add('dark');
+        } else {
+            document.documentElement.classList.remove('dark');
+        }
+
+        // Set loaded to true after a small delay to allow for animations
+        setTimeout(() => setLoaded(true), 300);
     }, []);
 
     // Add scroll listener for header shadow
@@ -129,18 +160,18 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
 
         return (
             <div className="flex mb-2 text-sm text-muted-foreground">
-                <Link href="/admin" className="transition-colors hover:text-primary">
+                <MotionLink href="/admin" className="transition-colors hover:text-primary">
                     Admin
-                </Link>
+                </MotionLink>
                 {paths.slice(1).map((path, index) => (
                     <div key={path} className="flex items-center">
                         <span className="mx-2">/</span>
                         {index === paths.slice(1).length - 1 ? (
                             <span className="font-medium capitalize text-foreground">{path}</span>
                         ) : (
-                            <Link href={`/admin/${paths.slice(1, index + 2).join('/')}`} className="capitalize transition-colors hover:text-primary">
+                            <MotionLink href={`/admin/${paths.slice(1, index + 2).join('/')}`} className="capitalize transition-colors hover:text-primary">
                                 {path}
-                            </Link>
+                            </MotionLink>
                         )}
                     </div>
                 ))}
@@ -190,12 +221,25 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
     };
 
     return (
-        <div className="min-h-screen bg-background text-foreground">
+        <div className={`min-h-screen bg-background text-foreground transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}>
             {/* Mobile sidebar */}
             <div className={`fixed inset-0 z-50 flex md:hidden ${sidebarOpen ? '' : 'hidden'}`}>
-                <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} aria-hidden="true"></div>
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm"
+                    onClick={() => setSidebarOpen(false)}
+                    aria-hidden="true"
+                ></motion.div>
 
-                <div className="relative flex flex-col flex-1 w-full max-w-xs pt-5 pb-4 transition-transform duration-200 ease-in-out transform shadow-xl bg-sidebar">
+                <motion.div
+                    initial={{ x: "-100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "-100%" }}
+                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                    className="relative flex flex-col flex-1 w-full max-w-xs pt-5 pb-4 shadow-xl bg-sidebar"
+                >
                     <div className="absolute top-0 right-0 pt-2 -mr-12">
                         <button
                             className="flex items-center justify-center w-10 h-10 ml-1 rounded-full bg-sidebar-accent focus:ring-primary focus:ring-2 focus:outline-none"
@@ -208,40 +252,48 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
 
                     <div className="flex items-center flex-shrink-0 px-4">
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary">
-                                <img src="/logo.png" alt="Logo" className="w-5 h-5" />
+                            <div className="flex items-center justify-center rounded-lg w-9 h-9 bg-primary/90 shadow-glow">
+                                <img src="/logo.png" alt="Logo" className="w-6 h-6" />
                             </div>
-                            <h1 className="text-xl font-bold text-sidebar-foreground">CinemaAdmin</h1>
+                            <h1 className="text-xl font-bold text-sidebar-foreground">
+                                Cinema<span className="text-primary">Admin</span>
+                            </h1>
                         </div>
                     </div>
 
                     <div className="flex-1 h-0 mt-6 overflow-y-auto">
                         <nav className="px-3 space-y-1">
-                            {navigationItems.map((item) => {
+                            {navigationItems.map((item, index) => {
                                 const isActive = isNavItemActive(item.href);
                                 return (
-                                    <Link
+                                    <motion.div
                                         key={item.name}
-                                        href={item.href}
-                                        className={`group flex items-center rounded-md px-3 py-2.5 text-base font-medium transition-colors ${isActive
-                                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                                            }`}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.05 }}
                                     >
-                                        <item.icon
-                                            className={`mr-4 h-5 w-5 flex-shrink-0 ${isActive
-                                                ? 'text-sidebar-primary-foreground'
-                                                : 'text-muted-foreground group-hover:text-sidebar-accent-foreground'
+                                        <MotionLink
+                                            href={item.href}
+                                            className={`group flex items-center rounded-md px-3 py-2.5 text-base font-medium transition-all ${isActive
+                                                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md'
+                                                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                                                 }`}
-                                            aria-hidden="true"
-                                        />
-                                        {item.name}
-                                    </Link>
+                                        >
+                                            <item.icon
+                                                className={`mr-4 h-5 w-5 flex-shrink-0 transition-all ${isActive
+                                                    ? 'text-sidebar-primary-foreground'
+                                                    : 'text-muted-foreground group-hover:text-sidebar-accent-foreground'
+                                                    }`}
+                                                aria-hidden="true"
+                                            />
+                                            {item.name}
+                                        </MotionLink>
+                                    </motion.div>
                                 );
                             })}
                         </nav>
                     </div>
-                </div>
+                </motion.div>
             </div>
 
             {/* Static sidebar for desktop */}
@@ -249,10 +301,12 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
                 <div className="flex flex-col flex-grow h-full pt-5 overflow-y-auto bg-sidebar">
                     <div className="flex items-center flex-shrink-0 px-6 mb-8">
                         <div className="flex items-center gap-2">
-                            <div className="flex items-center justify-center w-8 h-8 rounded-md bg-primary">
-                                <img src="/logo.png" alt="Logo" className="w-5 h-5" />
+                            <div className="flex items-center justify-center rounded-lg w-9 h-9 bg-primary/90 shadow-glow">
+                                <img src="/logo.png" alt="Logo" className="w-6 h-6" />
                             </div>
-                            <h1 className="text-xl font-bold text-sidebar-foreground">CinemaAdmin</h1>
+                            <h1 className="text-xl font-bold text-sidebar-foreground">
+                                Cine<span className="text-primary">Admin</span>
+                            </h1>
                         </div>
                     </div>
 
@@ -262,29 +316,53 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
 
                     <div className="flex flex-col flex-grow mt-2">
                         <nav className="flex-1 px-3 pb-4 space-y-1">
-                            {navigationItems.map((item) => {
+                            {navigationItems.map((item, index) => {
                                 const isActive = isNavItemActive(item.href);
                                 return (
-                                    <Link
+                                    <motion.div
                                         key={item.name}
-                                        href={item.href}
-                                        className={`group flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-all ${isActive
-                                            ? 'bg-sidebar-primary text-sidebar-primary-foreground'
-                                            : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-                                            }`}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        transition={{ delay: index * 0.05 }}
                                     >
-                                        <item.icon
-                                            className={`mr-3 h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-110 ${isActive
-                                                ? 'text-sidebar-primary-foreground'
-                                                : 'text-muted-foreground group-hover:text-sidebar-accent-foreground'
+                                        <MotionLink
+                                            href={item.href}
+                                            className={`group flex items-center rounded-md px-3 py-2.5 text-sm font-medium transition-all ${isActive
+                                                ? 'bg-sidebar-primary text-sidebar-primary-foreground shadow-md'
+                                                : 'text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                                                 }`}
-                                            aria-hidden="true"
-                                        />
-                                        {item.name}
-                                    </Link>
+                                        >
+                                            <item.icon
+                                                className={`mr-3 h-5 w-5 flex-shrink-0 transition-all duration-200 group-hover:scale-110 ${isActive
+                                                    ? 'text-sidebar-primary-foreground'
+                                                    : 'text-muted-foreground group-hover:text-sidebar-accent-foreground'
+                                                    }`}
+                                                aria-hidden="true"
+                                            />
+                                            {item.name}
+                                            {isActive && (
+                                                <motion.div
+                                                    layoutId="activeIndicator"
+                                                    className="absolute left-0 w-1 h-5 ml-0.5 rounded-r-full bg-primary"
+                                                    initial={{ opacity: 0 }}
+                                                    animate={{ opacity: 1 }}
+                                                    transition={{ duration: 0.2 }}
+                                                />
+                                            )}
+                                        </MotionLink>
+                                    </motion.div>
                                 );
                             })}
                         </nav>
+                    </div>
+
+                    <div className="p-4 mt-auto">
+                        <div className="p-3 rounded-lg bg-sidebar-accent/50">
+                            <div className="flex items-center gap-3">
+                                <Sparkles className="w-5 h-5 text-yellow-300" />
+                                <div className="text-xs font-medium text-sidebar-foreground">Admin Panel v2.0</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -292,7 +370,7 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
             {/* Main content */}
             <div className="flex flex-col flex-1 md:pl-64">
                 <div
-                    className={`sticky top-0 z-10 flex h-16 flex-shrink-0 ${isScrolled ? 'shadow-lg' : 'shadow-md'} bg-card transition-shadow duration-200`}
+                    className={`sticky top-0 z-10 flex h-16 flex-shrink-0 ${isScrolled ? 'shadow-lg backdrop-blur-sm bg-card/90' : 'shadow-md bg-card'} transition-all duration-200`}
                 >
                     <button
                         type="button"
@@ -310,77 +388,138 @@ export default function AdminLayout({ children, title = 'Dashboard', subtitle }:
                         </div>
 
                         <div className="flex items-center gap-5 ml-4 md:ml-6">
+                            {/* Theme toggle button */}
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                onClick={toggleTheme}
+                                className="flex items-center justify-center transition-colors rounded-full w-9 h-9 text-muted-foreground hover:bg-accent/50 hover:text-foreground"
+                                title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                            >
+                                <motion.div
+                                    initial={false}
+                                    animate={{ rotate: theme === 'dark' ? 0 : 180 }}
+                                    transition={{ duration: 0.5, type: "spring" }}
+                                >
+                                    {theme === 'dark' ? (
+                                        <SunIcon className="w-5 h-5" />
+                                    ) : (
+                                        <MoonIcon className="w-5 h-5" />
+                                    )}
+                                </motion.div>
+                                <span className="sr-only">
+                                    {theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+                                </span>
+                            </motion.button>
+
                             {/* User profile dropdown - improved styling */}
                             <div className="relative">
-                                <button
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
                                     onClick={handleProfileClick}
                                     className="flex items-center gap-2 text-sm transition-opacity rounded-md hover:opacity-80 focus:outline-none"
                                     aria-expanded={isProfileOpen}
                                     aria-haspopup="true"
                                 >
-                                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 border-primary border-1">
+                                    <div className="flex items-center justify-center rounded-full w-9 h-9 bg-primary/10 ring-2 ring-primary/30">
                                         <span className="text-sm font-medium text-foreground">{userInitial}</span>
                                     </div>
                                     <span className="hidden text-sm font-medium text-foreground md:block">{displayName}</span>
-                                    <ChevronDownIcon
-                                        className={`text-muted-foreground hidden h-4 w-4 transition-transform duration-200 md:block ${isProfileOpen ? 'rotate-180' : ''}`}
-                                    />
-                                </button>
+                                    <motion.div
+                                        animate={{ rotate: isProfileOpen ? 180 : 0 }}
+                                        transition={{ duration: 0.3 }}
+                                    >
+                                        <ChevronDownIcon className="hidden w-4 h-4 text-muted-foreground md:block" />
+                                    </motion.div>
+                                </motion.button>
 
                                 {isProfileOpen && (
-                                    <div className="absolute right-0 z-10 w-48 mt-2 overflow-hidden transition-all duration-200 ease-out origin-top-right transform border rounded-md shadow-lg border-border bg-popover">
+                                    <motion.div
+                                        initial={{ opacity: 0, y: -10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0, y: -10 }}
+                                        transition={{ duration: 0.2 }}
+                                        className="absolute right-0 z-10 w-48 mt-2 overflow-hidden origin-top-right border rounded-md shadow-lg border-border bg-popover"
+                                    >
                                         <div className="py-1">
-                                            <Link
+                                            <MotionLink
                                                 href="/admin/profile"
                                                 className="flex items-center px-4 py-2 text-sm transition-colors text-popover-foreground hover:bg-accent/80"
                                             >
                                                 <UserIcon className="w-4 h-4 mr-3 text-muted-foreground" />
                                                 Your Profile
-                                            </Link>
-                                            <Link
+                                            </MotionLink>
+                                            <MotionLink
                                                 href="/admin/settings"
                                                 className="flex items-center px-4 py-2 text-sm transition-colors text-popover-foreground hover:bg-accent/80"
                                             >
                                                 <CogIcon className="w-4 h-4 mr-3 text-muted-foreground" />
                                                 Settings
-                                            </Link>
+                                            </MotionLink>
                                             <div className="my-1 border-t border-border"></div>
-                                            <Link
+                                            <MotionLink
                                                 href={route('admin.logout')}
+                                                className="flex items-center w-full px-4 py-2 text-sm transition-colors text-popover-foreground hover:bg-accent/80"
                                                 method="post"
                                                 as="button"
-                                                className="flex items-center w-full px-4 py-2 text-sm transition-colors text-popover-foreground hover:bg-accent/80"
                                             >
                                                 <ArrowLeftOnRectangleIcon className="w-4 h-4 mr-3 text-muted-foreground" />
                                                 Sign out
-                                            </Link>
+                                            </MotionLink>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 )}
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <main className="flex-1 border bg-background">
+                <main className="flex-1 bg-background">
                     {/* Page header with improved film strip design */}
-                    <div className="relative px-4 py-4 m-1 overflow-hidden bg-card sm:px-6 md:px-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="relative px-4 py-5 m-3 overflow-hidden border rounded-lg bg-card sm:px-6 md:px-8 border-border/50"
+                    >
                         {generateBreadcrumbs()}
                         <div className="flex items-center justify-between mt-1">
-                            <div>
-                                <h1 className="flex items-center text-2xl font-bold tracking-tight text-foreground">
-                                    <PopcornIcon className="w-6 h-6 mr-2 text-yellow-200" />
-                                    {title}
-                                </h1>
-                                {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+                            <div className="flex items-center">
+                                <motion.div
+                                    whileHover={{ rotate: 10 }}
+                                    className="flex items-center justify-center p-2 mr-3 rounded-lg bg-primary/10"
+                                >
+                                    <Clapperboard className="w-6 h-6 text-primary" />
+                                </motion.div>
+                                <div>
+                                    <h1 className="flex items-center text-2xl font-bold tracking-tight text-foreground">
+                                        {title}
+                                    </h1>
+                                    {subtitle && <p className="mt-1 text-sm text-muted-foreground">{subtitle}</p>}
+                                </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="p-4 md:p-8">
+                        {/* Decorative film strip */}
+                        <div className="absolute right-0 -top-6 opacity-5 rotate-12">
+                            <div className="flex items-center">
+                                {[...Array(6)].map((_, i) => (
+                                    <div key={i} className="w-12 h-16 mx-0.5 border-2 border-foreground"></div>
+                                ))}
+                            </div>
+                        </div>
+                    </motion.div>
+
+                    <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.5, delay: 0.2 }}
+                        className="p-4 md:p-8"
+                    >
                         {/* Content wrapper with improved shadow and rounded corners */}
-                        <div className="px-4 py-6 rounded-lg shadow-lg bg-card ring-1 ring-black/5 sm:p-6 md:p-8">{children}</div>
-                    </div>
+                        <div className="p-6 rounded-lg shadow-lg bg-card sm:p-6 md:p-8 ring-1 ring-black/5">{children}</div>
+                    </motion.div>
                 </main>
             </div>
         </div>

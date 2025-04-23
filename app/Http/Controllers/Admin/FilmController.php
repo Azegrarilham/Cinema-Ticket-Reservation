@@ -4,12 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Film;
+use App\Services\OmdbApiService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
 class FilmController extends Controller
 {
+    protected $omdbApiService;
+
+    public function __construct(OmdbApiService $omdbApiService)
+    {
+        $this->omdbApiService = $omdbApiService;
+    }
+
     /**
      * Display a listing of the films.
      */
@@ -167,5 +175,101 @@ class FilmController extends Controller
 
         return redirect()->route('admin.films.index')
             ->with('success', 'Film deleted successfully.');
+    }
+
+    /**
+     * Search for films from OMDB API.
+     */
+    public function searchOmdb(Request $request)
+    {
+        $validated = $request->validate([
+            'query' => 'required|string|min:2|max:100',
+            'page' => 'nullable|integer|min:1',
+        ]);
+
+        $page = $validated['page'] ?? 1;
+        $result = $this->omdbApiService->searchByTitle($validated['query'], $page);
+
+        return response()->json($result);
+    }
+
+    /**
+     * Get detailed information about a film from OMDB API.
+     */
+    public function getOmdbFilmDetails($imdb_id)
+    {
+        try {
+            // Basic validation for IMDB ID format
+            if (!str_starts_with($imdb_id, 'tt')) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid IMDB ID format. Must start with "tt"',
+                ], 422);
+            }
+
+            $result = $this->omdbApiService->getFilmDetails($imdb_id);
+            return response()->json($result);
+        } catch (\Exception $e) {
+            \Log::error('OMDB API error', [
+                'error' => $e->getMessage(),
+                'imdb_id' => $imdb_id
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Error processing request: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Import a film from OMDB API.
+     */
+    public function importFromOmdb(Request $request)
+    {
+        $validated = $request->validate([
+            'imdb_id' => 'required|string|starts_with:tt',
+            'is_featured' => 'boolean',
+        ]);
+
+        $result = $this->omdbApiService->getFilmDetails($validated['imdb_id']);
+
+        if (!$result['success']) {
+            return response()->json($result, 422);
+        }
+
+        $filmData = $result['data'];
+
+        // Check if the film already exists in the database
+        $existingFilm = Film::where('title', $filmData['Title'])->first();
+        if ($existingFilm) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Film with this title already exists in the database',
+                'data' => $existingFilm
+            ], 422);
+        }
+
+        // Convert runtime from "123 min" to integer
+        $durationString = $filmData['Runtime'] ?? '0 min';
+        $duration = (int) filter_var($durationString, FILTER_SANITIZE_NUMBER_INT);
+
+        // Create the film
+        $film = Film::create([
+            'title' => $filmData['Title'],
+            'description' => $filmData['Plot'] ?? '',
+            'director' => $filmData['Director'] ?? '',
+            'duration' => $duration > 0 ? $duration : 120, // Default to 120 minutes if parsing fails
+            'genre' => $filmData['Genre'] ?? '',
+            'release_date' => $filmData['Released'] !== 'N/A' ? date('Y-m-d', strtotime($filmData['Released'])) : null,
+            'poster_image' => $filmData['Poster'] !== 'N/A' ? $filmData['Poster'] : null,
+            'is_featured' => $validated['is_featured'] ?? false,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Film imported successfully',
+            'data' => $film
+        ]);
     }
 }

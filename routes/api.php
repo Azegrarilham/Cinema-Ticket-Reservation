@@ -123,3 +123,57 @@ Route::get('/screenings/{screening}', function (App\Models\Screening $screening)
     $screening->load(['film', 'seats']);
     return response()->json($screening);
 });
+
+// Generic search endpoint for header search
+Route::get('/search', function (Request $request) {
+    $query = $request->input('q');
+
+    if (empty($query) || strlen($query) < 2) {
+        return response()->json(['results' => []]);
+    }
+
+    // Search films
+    $films = \App\Models\Film::where('title', 'like', "%{$query}%")
+        ->orWhere('genre', 'like', "%{$query}%")
+        ->orWhere('director', 'like', "%{$query}%")
+        ->limit(5)
+        ->get();
+
+    $results = [];
+
+    // Format film results
+    foreach ($films as $film) {
+        $results[] = [
+            'id' => 'film_' . $film->id,
+            'title' => $film->title,
+            'subtitle' => "Film - {$film->genre}",
+            'image' => $film->poster_image,
+            'url' => "/films/{$film->id}"
+        ];
+    }
+
+    // Search upcoming screenings
+    $screenings = \App\Models\Screening::with('film')
+        ->whereHas('film', function ($q) use ($query) {
+            $q->where('title', 'like', "%{$query}%");
+        })
+        ->where('start_time', '>', now())
+        ->where('is_active', true)
+        ->orderBy('start_time')
+        ->limit(3)
+        ->get();
+
+    // Format screening results
+    foreach ($screenings as $screening) {
+        $date = date('M d, h:i A', strtotime($screening->start_time));
+        $results[] = [
+            'id' => 'screening_' . $screening->id,
+            'title' => $screening->film->title,
+            'subtitle' => "Screening - {$date}",
+            'image' => $screening->film->poster_image,
+            'url' => "/films/{$screening->film->id}?screening={$screening->id}"
+        ];
+    }
+
+    return response()->json(['results' => $results]);
+});

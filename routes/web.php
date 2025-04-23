@@ -128,6 +128,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:admin', \App\Http\Midd
     // Films
     Route::resource('films', AdminFilmController::class);
 
+    // OMDB API routes
+    Route::post('/films/omdb/search', [AdminFilmController::class, 'searchOmdb'])->name('films.omdb.search');
+    // This route expects imdb_id as a route parameter
+    Route::get('/films/omdb/{imdb_id}/details', [AdminFilmController::class, 'getOmdbFilmDetails'])->name('films.omdb.details');
+    Route::post('/films/omdb/import', [AdminFilmController::class, 'importFromOmdb'])->name('films.omdb.import');
+
     // Screenings
     Route::resource('screenings', ScreeningController::class);
     Route::get('/films/{film}/screenings', [ScreeningController::class, 'filmScreenings'])

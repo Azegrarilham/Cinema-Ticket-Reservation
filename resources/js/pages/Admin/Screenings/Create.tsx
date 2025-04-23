@@ -1,7 +1,33 @@
 import AdminLayout from '@/layouts/AdminLayout';
-import { CalendarIcon, ClockIcon, FilmIcon } from '@heroicons/react/24/outline';
+import { CalendarIcon } from '@heroicons/react/24/outline';
+import ArrowLeftIcon from '@heroicons/react/24/outline/ArrowLeftIcon.js';
+import FilmIcon from '@heroicons/react/24/outline/FilmIcon.js';
+import ClockIcon from '@heroicons/react/24/outline/ClockIcon.js';
+import CurrencyDollarIcon from '@heroicons/react/24/outline/CurrencyDollarIcon.js';
 import { Head, Link, useForm } from '@inertiajs/react';
-import React, { useEffect, useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { motion } from 'framer-motion';
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            when: 'beforeChildren',
+            staggerChildren: 0.1,
+        },
+    },
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: { type: 'spring', stiffness: 100 }
+    },
+};
 
 interface Film {
     id: number;
@@ -14,148 +40,115 @@ interface Props {
 }
 
 export default function Create({ films }: Props) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+    const [selectedDate, setSelectedDate] = useState<string>(
+        new Date().toISOString().split('T')[0]
+    );
+    const [selectedTime, setSelectedTime] = useState<string>('12:00');
+
+    const { data, setData, errors, post, processing } = useForm({
         film_id: '',
         start_time: '',
-        start_time_hour: '18',
-        start_time_minute: '00',
         room: '',
-        total_seats: '120',
         price: '',
         is_active: true,
-        seat_layout: {
-            rows: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-            seats_per_row: 15,
-        },
     });
 
-    const [selectedDate, setSelectedDate] = useState('');
-    const [selectedFilm, setSelectedFilm] = useState<Film | null>(null);
-
-    useEffect(() => {
-        // When film_id changes, find the selected film
-        if (data.film_id) {
-            const film = films.find((f) => f.id.toString() === data.film_id);
-            setSelectedFilm(film || null);
-        } else {
-            setSelectedFilm(null);
+    // Combine the date and time into a single ISO string for submit
+    const updateDateTime = () => {
+        if (selectedDate && selectedTime) {
+            const dateTime = `${selectedDate}T${selectedTime}`;
+            setData('start_time', dateTime);
         }
-    }, [data.film_id, films]);
+    };
+
+    // Update the start_time whenever the date or time changes
+    React.useEffect(() => {
+        updateDateTime();
+    }, [selectedDate, selectedTime]);
+
+    // Generate time options every 15 minutes
+    const timeOptions = useMemo(() => {
+        const options = [];
+        for (let hour = 9; hour <= 23; hour++) {
+            for (let minute = 0; minute < 60; minute += 15) {
+                const formattedHour = hour.toString().padStart(2, '0');
+                const formattedMinute = minute.toString().padStart(2, '0');
+                options.push(`${formattedHour}:${formattedMinute}`);
+            }
+        }
+        return options;
+    }, []);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-
-        // Combine date and time for start_time
-        if (selectedDate) {
-            const formattedDateTime = `${selectedDate}T${data.start_time_hour}:${data.start_time_minute}:00`;
-            setData('start_time', formattedDateTime);
-        }
-
-        post(route('admin.screenings.store'), {
-            onSuccess: () => reset(),
-        });
+        post(route('admin.screenings.store'));
     };
 
-    const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setSelectedDate(e.target.value);
-        // Also update the start_time when date changes
-        if (e.target.value) {
-            const formattedDateTime = `${e.target.value}T${data.start_time_hour}:${data.start_time_minute}:00`;
-            setData('start_time', formattedDateTime);
-        }
-    };
-
-    const handleTimeChange = (type: 'hour' | 'minute', value: string) => {
-        if (type === 'hour') {
-            setData('start_time_hour', value);
-        } else {
-            setData('start_time_minute', value);
-        }
-
-        // Update the start_time when time changes
-        if (selectedDate) {
-            const hour = type === 'hour' ? value : data.start_time_hour;
-            const minute = type === 'minute' ? value : data.start_time_minute;
-            const formattedDateTime = `${selectedDate}T${hour}:${minute}:00`;
-            setData('start_time', formattedDateTime);
-        }
-    };
-
-    const generateTimeOptions = (type: 'hour' | 'minute') => {
-        const options = [];
-        const max = type === 'hour' ? 23 : 59;
-        const step = type === 'hour' ? 1 : 5;
-
-        for (let i = 0; i <= max; i += step) {
-            const value = i.toString().padStart(2, '0');
-            options.push(
-                <option key={value} value={value}>
-                    {value}
-                </option>,
-            );
-        }
-
-        return options;
-    };
-
-    const updateSeatLayout = (type: 'rows' | 'seats_per_row', value: any) => {
-        setData('seat_layout', {
-            ...data.seat_layout,
-            [type]: value,
-        });
-    };
-
-    const getEndTime = () => {
-        if (!selectedFilm || !selectedDate || !data.start_time_hour || !data.start_time_minute) {
-            return 'N/A';
-        }
-
-        const startTime = new Date(`${selectedDate}T${data.start_time_hour}:${data.start_time_minute}:00`);
-        const endTime = new Date(startTime.getTime() + selectedFilm.duration * 60 * 1000);
-
-        return endTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    };
+    // Find the selected film for display
+    const selectedFilm = films.find(film => film.id.toString() === data.film_id);
 
     return (
-        <AdminLayout title="Add New Screening" subtitle="Schedule a new film screening">
-            <Head title="Add New Screening" />
+        <AdminLayout title="Schedule New Screening" subtitle="Add a new film screening to the calendar">
+            <Head title="Schedule New Screening" />
 
-            {/* Header with back button */}
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center">
-                    <CalendarIcon className="w-6 h-6 mr-2 text-primary" />
-                    <h2 className="text-lg font-semibold text-foreground">Create Screening</h2>
-                </div>
-                <Link
-                    href={route('admin.screenings.index')}
-                    className="flex items-center px-4 py-2 text-sm font-medium transition border rounded-md border-border text-foreground hover:bg-muted"
-                >
-                    Back to Screenings
-                </Link>
-            </div>
+            <motion.div
+                className="container px-4 py-6 mx-auto"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
+                {/* Back link */}
+                <motion.div className="mb-6" variants={itemVariants}>
+                    <Link
+                        href={route('admin.screenings.index')}
+                        className="flex items-center text-sm transition-colors text-muted-foreground hover:text-foreground"
+                    >
+                        <ArrowLeftIcon className="w-4 h-4 mr-1" />
+                        Back to Screenings
+                    </Link>
+                </motion.div>
 
-            {/* Main form */}
-            <div className="border rounded-lg shadow-sm border-border bg-card">
-                <div className="p-4 border-b border-border">
-                    <h3 className="font-medium text-foreground">Screening Information</h3>
-                    <p className="text-sm text-muted-foreground">Schedule a new screening for your cinema</p>
-                </div>
+                {/* Header */}
+                <motion.div className="flex flex-col mb-8 md:flex-row md:items-center md:justify-between" variants={itemVariants}>
+                    <div className="flex items-center">
+                        <div className="flex items-center justify-center w-10 h-10 mr-3 rounded-lg bg-primary/10">
+                            <CalendarIcon className="w-6 h-6 text-primary" />
+                        </div>
+                        <div>
+                            <h1 className="mb-1 text-2xl font-bold text-foreground">Schedule New Screening</h1>
+                            <p className="text-sm text-muted-foreground">Add a new film screening to the calendar</p>
+                        </div>
+                    </div>
+                </motion.div>
 
-                <div className="p-6">
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        {/* Film Selection */}
-                        <div className="space-y-6">
-                            <div className="p-4 border rounded-lg border-border bg-muted/30">
-                                <h3 className="mb-4 text-sm font-medium text-foreground">Film Selection</h3>
+                {/* Main form */}
+                <motion.div className="overflow-hidden border rounded-lg shadow-sm border-border bg-card" variants={itemVariants}>
+                    <div className="px-6 py-4 border-b border-border bg-muted/30">
+                        <h2 className="flex items-center text-lg font-medium text-foreground">
+                            <FilmIcon className="w-5 h-5 mr-2 text-primary" />
+                            Screening Information
+                        </h2>
+                    </div>
+
+                    <div className="p-6">
+                        <form onSubmit={handleSubmit} className="space-y-6">
+                            {/* Film Selection */}
+                            <motion.div
+                                className="p-5 border rounded-lg border-border bg-muted/20"
+                                variants={itemVariants}
+                                whileHover={{ y: -5, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <h3 className="mb-4 text-md font-medium text-foreground">Film Selection</h3>
                                 <div>
-                                    <label htmlFor="film_id" className="text-foreground mb-1.5 block text-sm font-medium">
+                                    <label htmlFor="film_id" className="mb-1.5 block text-sm font-medium text-foreground">
                                         Select Film <span className="text-destructive">*</span>
                                     </label>
                                     <select
                                         id="film_id"
                                         value={data.film_id}
                                         onChange={(e) => setData('film_id', e.target.value)}
-                                        className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
+                                        className={`w-full rounded-md border px-3 py-2.5 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${
                                             errors.film_id ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
                                         }`}
                                         required
@@ -167,11 +160,16 @@ export default function Create({ films }: Props) {
                                             </option>
                                         ))}
                                     </select>
-                                    {errors.film_id && <p className="text-destructive mt-1.5 text-sm">{errors.film_id}</p>}
+                                    {errors.film_id && <p className="mt-1.5 text-sm text-destructive">{errors.film_id}</p>}
                                 </div>
 
                                 {selectedFilm && (
-                                    <div className="p-3 mt-4 border rounded-md border-border">
+                                    <motion.div
+                                        className="p-3 mt-4 border rounded-md border-border bg-muted/10"
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        transition={{ duration: 0.3 }}
+                                    >
                                         <div className="flex items-center">
                                             <FilmIcon className="w-5 h-5 mr-2 text-primary" />
                                             <span className="font-medium text-foreground">{selectedFilm.title}</span>
@@ -180,88 +178,94 @@ export default function Create({ films }: Props) {
                                             <ClockIcon className="w-4 h-4 mr-1" />
                                             <span className="text-sm">Duration: {selectedFilm.duration} minutes</span>
                                         </div>
-                                    </div>
+                                    </motion.div>
                                 )}
-                            </div>
+                            </motion.div>
 
                             {/* Time and Location */}
-                            <div className="p-4 border rounded-lg border-border bg-muted/30">
-                                <h3 className="mb-4 text-sm font-medium text-foreground">Time and Location</h3>
+                            <motion.div
+                                className="p-5 border rounded-lg border-border bg-muted/20"
+                                variants={itemVariants}
+                                whileHover={{ y: -5, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <h3 className="mb-4 text-md font-medium text-foreground">Time and Location</h3>
                                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                                     <div>
-                                        <label htmlFor="screening_date" className="text-foreground mb-1.5 block text-sm font-medium">
+                                        <label htmlFor="screening_date" className="mb-1.5 block text-sm font-medium text-foreground">
                                             Screening Date <span className="text-destructive">*</span>
                                         </label>
-                                        <input
-                                            id="screening_date"
-                                            type="date"
-                                            value={selectedDate}
-                                            onChange={handleDateChange}
-                                            min={new Date().toISOString().split('T')[0]}
-                                            className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                                errors.start_time ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                            }`}
-                                            required
-                                        />
-                                        {errors.start_time && <p className="text-destructive mt-1.5 text-sm">{errors.start_time}</p>}
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <CalendarIcon className="w-5 h-5 text-muted-foreground" />
+                                            </div>
+                                            <input
+                                                id="screening_date"
+                                                type="date"
+                                                value={selectedDate}
+                                                onChange={(e) => setSelectedDate(e.target.value)}
+                                                min={new Date().toISOString().split('T')[0]}
+                                                className={`w-full rounded-md border py-2.5 pl-10 pr-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground`}
+                                                required
+                                            />
+                                        </div>
+                                        {errors.start_time && <p className="mt-1.5 text-sm text-destructive">{errors.start_time}</p>}
                                     </div>
 
                                     <div>
-                                        <label htmlFor="screening_time" className="text-foreground mb-1.5 block text-sm font-medium">
-                                            Start Time <span className="text-destructive">*</span>
+                                        <label htmlFor="screening_time" className="mb-1.5 block text-sm font-medium text-foreground">
+                                            Screening Time <span className="text-destructive">*</span>
                                         </label>
-                                        <div className="flex items-center space-x-2">
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <ClockIcon className="w-5 h-5 text-muted-foreground" />
+                                            </div>
                                             <select
-                                                value={data.start_time_hour}
-                                                onChange={(e) => handleTimeChange('hour', e.target.value)}
-                                                className="px-3 py-2 border rounded-md focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground"
+                                                id="screening_time"
+                                                value={selectedTime}
+                                                onChange={(e) => setSelectedTime(e.target.value)}
+                                                className={`w-full rounded-md border py-2.5 pl-10 pr-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground`}
                                                 required
                                             >
-                                                {generateTimeOptions('hour')}
-                                            </select>
-                                            <span className="text-foreground">:</span>
-                                            <select
-                                                value={data.start_time_minute}
-                                                onChange={(e) => handleTimeChange('minute', e.target.value)}
-                                                className="px-3 py-2 border rounded-md focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground"
-                                                required
-                                            >
-                                                {generateTimeOptions('minute')}
+                                                {timeOptions.map((time) => (
+                                                    <option key={time} value={time}>
+                                                        {time}
+                                                    </option>
+                                                ))}
                                             </select>
                                         </div>
                                     </div>
 
-                                    {selectedFilm && selectedDate && (
-                                        <div className="col-span-2 p-3 border rounded-md bg-primary/5 text-primary border-primary/20">
-                                            <p className="text-sm">
-                                                <span className="font-medium">End Time:</span> {getEndTime()}
-                                            </p>
-                                        </div>
-                                    )}
-
                                     <div>
-                                        <label htmlFor="room" className="text-foreground mb-1.5 block text-sm font-medium">
+                                        <label htmlFor="room" className="mb-1.5 block text-sm font-medium text-foreground">
                                             Room/Theater <span className="text-destructive">*</span>
                                         </label>
-                                        <input
-                                            id="room"
-                                            value={data.room}
-                                            onChange={(e) => setData('room', e.target.value)}
-                                            placeholder="e.g. Theater 1, IMAX, Screen A"
-                                            className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                                errors.room ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                            }`}
-                                            required
-                                        />
-                                        {errors.room && <p className="text-destructive mt-1.5 text-sm">{errors.room}</p>}
+                                        <div className="relative">
+                                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <FilmIcon className="w-5 h-5 text-muted-foreground" />
+                                            </div>
+                                            <input
+                                                id="room"
+                                                value={data.room}
+                                                onChange={(e) => setData('room', e.target.value)}
+                                                placeholder="e.g. Theater 1, IMAX, Screen A"
+                                                className={`w-full rounded-md border py-2.5 pl-10 pr-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${
+                                                    errors.room ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
+                                                }`}
+                                                required
+                                            />
+                                        </div>
+                                        {errors.room && <p className="mt-1.5 text-sm text-destructive">{errors.room}</p>}
                                     </div>
 
                                     <div>
-                                        <label htmlFor="price" className="text-foreground mb-1.5 block text-sm font-medium">
+                                        <label htmlFor="price" className="mb-1.5 block text-sm font-medium text-foreground">
                                             Ticket Price <span className="text-destructive">*</span>
                                         </label>
                                         <div className="relative">
-                                            <span className="absolute -translate-y-1/2 text-muted-foreground top-1/2 left-3">$</span>
+                                            <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                                                <CurrencyDollarIcon className="w-5 h-5 text-muted-foreground" />
+                                            </div>
                                             <input
                                                 id="price"
                                                 type="number"
@@ -270,137 +274,63 @@ export default function Create({ films }: Props) {
                                                 value={data.price}
                                                 onChange={(e) => setData('price', e.target.value)}
                                                 placeholder="0.00"
-                                                className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border py-2 pr-3 pl-8 ${
+                                                className={`w-full rounded-md border py-2.5 pl-10 pr-3 bg-background text-foreground border-input focus:border-primary focus:ring-primary/30 placeholder:text-muted-foreground ${
                                                     errors.price ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
                                                 }`}
                                                 required
                                             />
                                         </div>
-                                        {errors.price && <p className="text-destructive mt-1.5 text-sm">{errors.price}</p>}
+                                        {errors.price && <p className="mt-1.5 text-sm text-destructive">{errors.price}</p>}
                                     </div>
-                                </div>
-                            </div>
 
-                            {/* Seats Configuration */}
-                            <div className="p-4 border rounded-lg border-border bg-muted/30">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="mb-4 text-sm font-medium text-foreground">Seats Configuration</h3>
-                                    <div className="flex items-center">
-                                        <input
+                                    <div className="flex items-center p-3 border rounded-md border-border bg-muted/10">
+                                        <motion.input
+                                            whileTap={{ scale: 0.9 }}
                                             type="checkbox"
                                             id="is_active"
                                             checked={data.is_active}
                                             onChange={(e) => setData('is_active', e.target.checked)}
-                                            className="w-4 h-4 rounded text-primary focus:ring-primary/30 border-input"
+                                            className="w-5 h-5 rounded border-input focus:ring-primary/30 text-primary"
                                         />
                                         <label htmlFor="is_active" className="ml-2 text-sm text-foreground">
                                             Active (visible to customers)
                                         </label>
                                     </div>
                                 </div>
+                            </motion.div>
 
-                                <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                                    <div>
-                                        <label htmlFor="total_seats" className="text-foreground mb-1.5 block text-sm font-medium">
-                                            Total Seats <span className="text-destructive">*</span>
-                                        </label>
-                                        <input
-                                            id="total_seats"
-                                            type="number"
-                                            min="1"
-                                            max="500"
-                                            value={data.total_seats}
-                                            onChange={(e) => setData('total_seats', e.target.value)}
-                                            className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                                errors.total_seats ? 'border-destructive focus:border-destructive focus:ring-destructive/30' : ''
-                                            }`}
-                                            required
-                                        />
-                                        {errors.total_seats && <p className="text-destructive mt-1.5 text-sm">{errors.total_seats}</p>}
-                                    </div>
+                            <motion.div className="p-5 border-t" variants={itemVariants}>
+                                <p className="mb-6 text-sm text-muted-foreground">
+                                    <strong>Note:</strong> After creating a screening, you will be able to configure seating arrangements and view ticket sales.
+                                </p>
 
-                                    <div>
-                                        <label htmlFor="seats_per_row" className="text-foreground mb-1.5 block text-sm font-medium">
-                                            Seats Per Row <span className="text-destructive">*</span>
-                                        </label>
-                                        <input
-                                            id="seats_per_row"
-                                            type="number"
-                                            min="1"
-                                            max="50"
-                                            value={data.seat_layout.seats_per_row}
-                                            onChange={(e) => updateSeatLayout('seats_per_row', parseInt(e.target.value))}
-                                            className={`focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground w-full rounded-md border px-3 py-2 ${
-                                                errors['seat_layout.seats_per_row']
-                                                    ? 'border-destructive focus:border-destructive focus:ring-destructive/30'
-                                                    : ''
-                                            }`}
-                                            required
-                                        />
-                                        {errors['seat_layout.seats_per_row'] && (
-                                            <p className="text-destructive mt-1.5 text-sm">{errors['seat_layout.seats_per_row']}</p>
-                                        )}
-                                    </div>
-
-                                    <div className="col-span-1 md:col-span-2">
-                                        <label className="text-foreground mb-1.5 block text-sm font-medium">
-                                            Row Labels <span className="text-destructive">*</span>
-                                        </label>
-                                        <div className="flex flex-wrap gap-2 p-3 border rounded-md border-border bg-background">
-                                            {data.seat_layout.rows.map((row, index) => (
-                                                <div key={index} className="flex items-center justify-center w-8 h-8 rounded bg-muted">
-                                                    <span className="text-sm font-medium text-foreground">{row}</span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                        <p className="mt-2 text-xs text-muted-foreground">
-                                            Default row configuration (A-H). Row setup can be customized by an administrator if needed.
-                                        </p>
-                                    </div>
+                                <div className="flex justify-end space-x-3">
+                                    <motion.div
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        <Link
+                                            href={route('admin.screenings.index')}
+                                            className="inline-flex items-center px-4 py-2 text-sm font-medium transition border rounded-md border-border text-foreground hover:bg-muted"
+                                        >
+                                            Cancel
+                                        </Link>
+                                    </motion.div>
+                                    <motion.button
+                                        type="submit"
+                                        disabled={processing}
+                                        className="inline-flex items-center px-4 py-2 text-sm font-medium transition shadow-sm text-white bg-primary hover:bg-primary/90 rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30 disabled:opacity-50"
+                                        whileHover={{ scale: 1.05 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        {processing ? 'Creating...' : 'Create Screening'}
+                                    </motion.button>
                                 </div>
-
-                                <div className="p-3 mt-4 border rounded-md border-border bg-primary/5">
-                                    <p className="text-sm text-primary">
-                                        Total capacity: {data.seat_layout.rows.length * data.seat_layout.seats_per_row} seats (
-                                        {data.seat_layout.rows.length} rows × {data.seat_layout.seats_per_row} seats per row)
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-
-                        <div className="flex items-center justify-end space-x-3">
-                            <Link
-                                href={route('admin.screenings.index')}
-                                className="inline-flex items-center px-4 py-2 text-sm font-medium border rounded-md border-border text-foreground hover:bg-muted focus:ring-2 focus:outline-none disabled:opacity-70"
-                            >
-                                Cancel
-                            </Link>
-                            <button
-                                type="submit"
-                                className="inline-flex items-center px-4 py-2 text-sm font-medium transition rounded-md bg-primary hover:bg-primary/90 text-primary-foreground focus:ring-primary/30 focus:ring-2 focus:outline-none disabled:opacity-70"
-                                disabled={processing}
-                            >
-                                {processing ? (
-                                    <>
-                                        <svg className="w-4 h-4 mr-2 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                            <path
-                                                className="opacity-75"
-                                                fill="currentColor"
-                                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                                            ></path>
-                                        </svg>
-                                        Creating...
-                                    </>
-                                ) : (
-                                    'Create Screening'
-                                )}
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                            </motion.div>
+                        </form>
+                    </div>
+                </motion.div>
+            </motion.div>
         </AdminLayout>
     );
 }

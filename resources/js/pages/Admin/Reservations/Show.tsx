@@ -1,6 +1,7 @@
 import AdminLayout from '@/layouts/AdminLayout';
 import { ArrowLeftIcon, CalendarIcon, CreditCardIcon, FilmIcon, TrashIcon, UserIcon } from '@heroicons/react/24/outline';
 import { Head, Link, router } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import { useState } from 'react';
 
 interface Seat {
@@ -57,6 +58,30 @@ interface Reservation {
 interface Props {
     reservation: Reservation;
 }
+
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.1
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 300,
+            damping: 24
+        }
+    }
+};
 
 export default function Show({ reservation }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -123,12 +148,28 @@ export default function Show({ reservation }: Props) {
     };
 
     const handleDelete = () => {
+        console.log('Delete button clicked for reservation:', reservation.id);
         setIsDeleteModalOpen(true);
     };
 
     const confirmDelete = () => {
-        router.delete(route('admin.reservations.destroy', { reservation: reservation.id }), {
+        if (reservation.status === 'confirmed') {
+            // Show an alert or some notification that confirmed reservations cannot be deleted
+            alert('Confirmed reservations cannot be deleted.');
+            setIsDeleteModalOpen(false);
+            return;
+        }
+
+        // This is the simplified approach that should work more reliably
+        router.delete(route('admin.reservations.destroy', reservation.id), {
             onSuccess: () => {
+                setIsDeleteModalOpen(false);
+                // Optionally add a redirect here if needed
+                router.visit(route('admin.reservations.index'));
+            },
+            onError: (errors) => {
+                console.error('Delete failed:', errors);
+                alert('Failed to delete reservation. Please try again.');
                 setIsDeleteModalOpen(false);
             },
         });
@@ -170,51 +211,92 @@ export default function Show({ reservation }: Props) {
             <Head title={`Reservation #${reservation.id}`} />
 
             {/* Header with actions */}
-            <div className="mb-6 flex items-center justify-between">
+            <motion.div
+                className="mb-6 flex items-center justify-between"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+            >
                 <div className="flex items-center">
-                    <Link
-                        href={route('admin.reservations.index')}
-                        className="text-muted-foreground hover:text-foreground mr-4 flex items-center transition"
+                    <motion.div whileHover={{ x: -3 }} transition={{ duration: 0.2 }}>
+                        <Link
+                            href={route('admin.reservations.index')}
+                            className="text-muted-foreground hover:text-foreground mr-4 flex items-center transition"
+                        >
+                            <ArrowLeftIcon className="mr-1 h-4 w-4" />
+                            Back to Reservations
+                        </Link>
+                    </motion.div>
+                    <motion.div
+                        whileHover={{ rotate: 10 }}
+                        className="flex items-center justify-center w-8 h-8 mr-2 rounded-full bg-primary/10"
                     >
-                        <ArrowLeftIcon className="mr-1 h-4 w-4" />
-                        Back to Reservations
-                    </Link>
-                    <CreditCardIcon className="text-primary mr-2 h-6 w-6" />
-                    <h2 className="text-foreground text-lg font-semibold">Reservation #{reservation.id}</h2>
-                    <span className={`ml-3 inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(reservation.status)}`}>
-                        {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
-                    </span>
+                        <CreditCardIcon className="text-primary h-5 w-5" />
+                    </motion.div>
+                    <div>
+                        <h2 className="text-foreground text-lg font-semibold">Reservation #{reservation.id}</h2>
+                        <span className={`ml-3 inline-flex rounded-full px-3 py-1 text-xs font-medium ${getStatusBadgeClass(reservation.status)}`}>
+                            {reservation.status.charAt(0).toUpperCase() + reservation.status.slice(1)}
+                        </span>
+                    </div>
                 </div>
 
                 <div className="flex space-x-3">
-                    <button
+                    <motion.button
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
                         onClick={handleStatusChange}
                         className="border-border text-foreground hover:bg-muted inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium transition"
                     >
                         Change Status
-                    </button>
-                    <button
+                    </motion.button>
+                    <motion.button
+                        whileHover={reservation.status !== 'confirmed' ? { scale: 1.05 } : {}}
+                        whileTap={reservation.status !== 'confirmed' ? { scale: 0.95 } : {}}
                         onClick={handleDelete}
-                        className="border-destructive text-destructive hover:bg-destructive/10 inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium transition"
+                        className={`inline-flex items-center rounded-md border px-4 py-2 text-sm font-medium transition ${
+                            reservation.status === 'confirmed'
+                                ? 'cursor-not-allowed opacity-50 border-gray-300 text-gray-400'
+                                : 'border-destructive text-destructive hover:bg-destructive/10'
+                        }`}
                         disabled={reservation.status === 'confirmed'}
+                        title={reservation.status === 'confirmed' ? 'Confirmed reservations cannot be deleted' : 'Delete this reservation'}
                     >
                         <TrashIcon className="mr-1.5 h-4 w-4" />
                         Delete
-                    </button>
+                    </motion.button>
                 </div>
-            </div>
+            </motion.div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <motion.div
+                className="grid grid-cols-1 gap-6 md:grid-cols-3"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
                 {/* Reservation details */}
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm md:col-span-2">
+                <motion.div
+                    className="border-border bg-card overflow-hidden rounded-lg border shadow-sm md:col-span-2"
+                    variants={itemVariants}
+                >
                     <div className="border-border bg-muted border-b px-6 py-4">
                         <h3 className="text-foreground text-lg font-medium">Reservation Details</h3>
                     </div>
                     <div className="divide-border divide-y">
                         {/* Film & Screening */}
-                        <div className="px-6 py-4">
+                        <motion.div
+                            className="px-6 py-4"
+                            whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                            transition={{ duration: 0.2 }}
+                        >
                             <div className="flex items-start">
-                                <FilmIcon className="text-primary mt-1 mr-3 h-5 w-5" />
+                                <motion.div
+                                    whileHover={{ rotate: 10, scale: 1.2 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="text-primary mt-1 mr-3"
+                                >
+                                    <FilmIcon className="h-5 w-5" />
+                                </motion.div>
                                 <div>
                                     <div className="text-muted-foreground mb-1 text-xs font-medium uppercase">Film & Screening</div>
                                     <div className="text-foreground mb-1 text-base font-semibold">{reservation.screening.film.title}</div>
@@ -224,12 +306,22 @@ export default function Show({ reservation }: Props) {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* Customer */}
-                        <div className="px-6 py-4">
+                        <motion.div
+                            className="px-6 py-4"
+                            whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                            transition={{ duration: 0.2 }}
+                        >
                             <div className="flex items-start">
-                                <UserIcon className="text-primary mt-1 mr-3 h-5 w-5" />
+                                <motion.div
+                                    whileHover={{ rotate: 10, scale: 1.2 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="text-primary mt-1 mr-3"
+                                >
+                                    <UserIcon className="h-5 w-5" />
+                                </motion.div>
                                 <div>
                                     <div className="text-muted-foreground mb-1 text-xs font-medium uppercase">Customer</div>
                                     {reservation.user ? (
@@ -254,10 +346,14 @@ export default function Show({ reservation }: Props) {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* Confirmation Code */}
-                        <div className="px-6 py-4">
+                        <motion.div
+                            className="px-6 py-4"
+                            whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                            transition={{ duration: 0.2 }}
+                        >
                             <div className="flex items-start">
                                 <svg className="text-primary mt-1 mr-3 h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -291,10 +387,14 @@ export default function Show({ reservation }: Props) {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* Seats */}
-                        <div className="px-6 py-4">
+                        <motion.div
+                            className="px-6 py-4"
+                            whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                            transition={{ duration: 0.2 }}
+                        >
                             <div className="flex items-start">
                                 <svg
                                     xmlns="http://www.w3.org/2000/svg"
@@ -340,10 +440,14 @@ export default function Show({ reservation }: Props) {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* Payment */}
-                        <div className="px-6 py-4">
+                        <motion.div
+                            className="px-6 py-4"
+                            whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                            transition={{ duration: 0.2 }}
+                        >
                             <div className="flex items-start">
                                 <CreditCardIcon className="text-primary mt-1 mr-3 h-5 w-5" />
                                 <div>
@@ -361,10 +465,14 @@ export default function Show({ reservation }: Props) {
                                     )}
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
 
                         {/* Dates */}
-                        <div className="px-6 py-4">
+                        <motion.div
+                            className="px-6 py-4"
+                            whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                            transition={{ duration: 0.2 }}
+                        >
                             <div className="flex items-start">
                                 <CalendarIcon className="text-primary mt-1 mr-3 h-5 w-5" />
                                 <div>
@@ -374,44 +482,75 @@ export default function Show({ reservation }: Props) {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </motion.div>
                     </div>
-                </div>
+                </motion.div>
 
                 {/* Summary */}
-                <div className="border-border bg-card overflow-hidden rounded-lg border shadow-sm">
+                <motion.div
+                    className="border-border bg-card overflow-hidden rounded-lg border shadow-sm"
+                    variants={itemVariants}
+                >
                     <div className="border-border bg-muted border-b px-6 py-4">
                         <h3 className="text-foreground text-lg font-medium">Summary</h3>
                     </div>
-                    <div className="px-6 py-4">
+                    <motion.div
+                        className="px-6 py-4"
+                        whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                        transition={{ duration: 0.2 }}
+                    >
                         <div className="space-y-4">
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Ticket price:</span>
-                                <span className="text-foreground">
+                                <motion.span
+                                    className="text-foreground"
+                                    whileHover={{ scale: 1.1 }}
+                                    transition={{ duration: 0.2 }}
+                                >
                                     {formatCurrency(reservation.screening.price)}
-                                </span>
+                                </motion.span>
                             </div>
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Number of seats:</span>
-                                <span className="text-foreground">{reservation.reservationSeats?.length || 0}</span>
+                                <motion.span
+                                    className="text-foreground"
+                                    whileHover={{ scale: 1.1 }}
+                                    transition={{ duration: 0.2 }}
+                                >
+                                    {reservation.reservationSeats?.length || 0}
+                                </motion.span>
                             </div>
                             <div className="border-border mt-4 border-t pt-4">
                                 <div className="flex justify-between font-medium">
                                     <span className="text-foreground">Total:</span>
-                                    <span className="text-foreground text-lg">
+                                    <motion.span
+                                        className="text-foreground text-lg"
+                                        whileHover={{ scale: 1.1, color: '#4f46e5' }}
+                                        transition={{ duration: 0.2 }}
+                                    >
                                         {formatCurrency(calculateTotalPrice())}
-                                    </span>
+                                    </motion.span>
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
-            </div>
+                    </motion.div>
+                </motion.div>
+            </motion.div>
 
             {/* Delete confirmation modal */}
             {isDeleteModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-card w-full max-w-md rounded-lg p-6 shadow-lg">
+                <motion.div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                >
+                    <motion.div
+                        className="bg-card w-full max-w-md rounded-lg p-6 shadow-lg"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                    >
                         <div className="mb-4 flex items-center">
                             <div className="bg-destructive/10 text-destructive flex h-10 w-10 items-center justify-center rounded-full">
                                 <TrashIcon className="h-5 w-5" />
@@ -424,27 +563,41 @@ export default function Show({ reservation }: Props) {
                         </p>
 
                         <div className="flex justify-end space-x-3">
-                            <button
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => setIsDeleteModalOpen(false)}
                                 className="border-border text-foreground hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium focus:outline-none"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={confirmDelete}
                                 className="bg-destructive hover:bg-destructive/90 text-destructive-foreground rounded-md px-4 py-2 text-sm font-medium focus:outline-none"
                             >
                                 Delete
-                            </button>
+                            </motion.button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
 
             {/* Status change modal */}
             {isStatusModalOpen && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-                    <div className="bg-card w-full max-w-md rounded-lg p-6 shadow-lg">
+                <motion.div
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                >
+                    <motion.div
+                        className="bg-card w-full max-w-md rounded-lg p-6 shadow-lg"
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                    >
                         <div className="mb-4 flex items-center">
                             <div className="bg-primary/10 text-primary flex h-10 w-10 items-center justify-center rounded-full">
                                 <CreditCardIcon className="h-5 w-5" />
@@ -474,21 +627,25 @@ export default function Show({ reservation }: Props) {
                         </div>
 
                         <div className="flex justify-end space-x-3">
-                            <button
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={() => setIsStatusModalOpen(false)}
                                 className="border-border text-foreground hover:bg-muted rounded-md border px-4 py-2 text-sm font-medium focus:outline-none"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </motion.button>
+                            <motion.button
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
                                 onClick={confirmStatusChange}
                                 className="bg-primary hover:bg-primary/90 rounded-md px-4 py-2 text-sm font-medium text-white focus:outline-none"
                             >
                                 Save Changes
-                            </button>
+                            </motion.button>
                         </div>
-                    </div>
-                </div>
+                    </motion.div>
+                </motion.div>
             )}
         </AdminLayout>
     );

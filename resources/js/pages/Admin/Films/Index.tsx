@@ -1,7 +1,9 @@
 import { Pagination } from '@/components/ui/pagination';
+import DeletePopup from '@/components/ui/DeletePopup';
 import AdminLayout from '@/layouts/AdminLayout';
 import { EyeIcon, FilmIcon, MagnifyingGlassIcon, PencilIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { Head, Link, useForm } from '@inertiajs/react';
+import { motion } from 'framer-motion';
 import React, { useState } from 'react';
 
 interface Film {
@@ -39,6 +41,30 @@ interface Props {
     };
 }
 
+// Animation variants
+const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+        opacity: 1,
+        transition: {
+            staggerChildren: 0.05
+        }
+    }
+};
+
+const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            type: "spring",
+            stiffness: 300,
+            damping: 24
+        }
+    }
+};
+
 export default function Index({ films, filters }: Props) {
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
     const [filmToDelete, setFilmToDelete] = useState<Film | null>(null);
@@ -52,6 +78,20 @@ export default function Index({ films, filters }: Props) {
     } = useForm({
         search: filters.search || '',
     });
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const value = e.target.value;
+        setData('search', value);
+
+        const timeoutId = setTimeout(() => {
+            get(route('admin.films.index'), {
+                preserveState: true,
+                replace: true,
+            });
+        }, 300);
+
+        return () => clearTimeout(timeoutId);
+    };
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
@@ -83,49 +123,68 @@ export default function Index({ films, filters }: Props) {
             <Head title="Films Management" />
 
             {/* Actions header */}
-            <div className="flex items-center justify-between mb-6">
+            <motion.div
+                className="flex items-center justify-between mb-6"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3 }}
+            >
                 <div className="flex items-center">
-                    <FilmIcon className="w-6 h-6 mr-2 text-primary" />
-                    <h2 className="text-lg font-semibold text-foreground">Film Catalog</h2>
-                    <span className="px-2 py-1 ml-3 text-xs font-medium rounded-md bg-muted">{films.total} total</span>
+                    <motion.div
+                        whileHover={{ rotate: 10 }}
+                        className="flex items-center justify-center w-10 h-10 mr-2 rounded-lg bg-primary/10"
+                    >
+                        <FilmIcon className="w-6 h-6 text-primary" />
+                    </motion.div>
+                    <div>
+                        <h2 className="text-lg font-semibold text-foreground">Film Catalog</h2>
+                        <span className="px-2 py-1 ml-1 text-xs font-medium rounded-md bg-muted">{films.total} total</span>
+                    </div>
                 </div>
-                <Link
-                    href={route('admin.films.create')}
-                    className="flex items-center px-4 py-2 text-sm font-medium text-white transition rounded-md shadow-sm bg-primary hover:bg-primary/90 focus:ring-primary/30 focus:ring-2 focus:outline-none"
-                >
-                    Add New Film
-                </Link>
-            </div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                    <Link
+                        href={route('admin.films.create')}
+                        className="flex items-center px-4 py-2 text-sm font-medium text-white transition rounded-md shadow-sm bg-primary hover:bg-primary/90 focus:ring-primary/30 focus:ring-2 focus:outline-none"
+                    >
+                        Add New Film
+                    </Link>
+                </motion.div>
+            </motion.div>
 
             {/* Search Form */}
-            <div className="mb-6">
+            <motion.div
+                className="mb-6"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.1, duration: 0.5 }}
+            >
                 <form onSubmit={handleSearch} className="flex items-center">
                     <div className="relative flex-grow">
                         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                             <MagnifyingGlassIcon className="w-5 h-5 text-muted-foreground" aria-hidden="true" />
                         </div>
-                        <input
+                        <motion.input
+                            whileFocus={{ scale: 1.01 }}
+                            transition={{ duration: 0.2 }}
                             type="text"
                             name="search"
                             id="search"
-                            className="block w-full py-2 pl-10 pr-3 border focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground rounded-l-md sm:text-sm"
-                            placeholder="Search film titles, directors, genres... outline-none focus:outline-none"
+                            className="block w-full py-2 pl-10 pr-3 border rounded-md shadow-sm focus:border-primary focus:ring-primary/30 bg-background text-foreground border-input placeholder:text-muted-foreground sm:text-sm"
+                            placeholder="Search film titles, directors, genres..."
                             value={data.search}
-                            onChange={(e) => setData('search', e.target.value)}
+                            onChange={handleSearchChange}
                         />
                     </div>
-                    <button
-                        type="submit"
-                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition border border-l-0 focus:ring-primary/30 bg-primary hover:bg-primary/90 border-border rounded-r-md focus:ring-2 focus:outline-none disabled:opacity-50"
-                        disabled={processing}
-                    >
-                        Search
-                    </button>
                 </form>
-            </div>
+            </motion.div>
 
             {/* Films Table */}
-            <div className="overflow-hidden rounded-lg shadow">
+            <motion.div
+                className="overflow-hidden transition-shadow rounded-lg shadow-md hover:shadow-lg"
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+            >
                 <div className="relative overflow-x-auto border border-border bg-card">
                     <table className="min-w-full divide-y divide-border">
                         <thead className="bg-muted">
@@ -155,12 +214,18 @@ export default function Index({ films, filters }: Props) {
                         </thead>
                         <tbody className="divide-y divide-border bg-card">
                             {films.data.length > 0 ? (
-                                films.data.map((film) => (
-                                    <tr key={film.id} className="transition-colors hover:bg-muted/40">
+                                films.data.map((film, index) => (
+                                    <motion.tr
+                                        key={film.id}
+                                        className="transition-colors hover:bg-muted/40"
+                                        variants={itemVariants}
+                                        custom={index}
+                                    >
                                         <td className="px-6 py-4 whitespace-nowrap">
                                             <div className="flex items-center">
-                                                <div className="flex-shrink-0 h-12 overflow-hidden border rounded-md shadow-sm border-border w-9">
-                                                    <img
+                                                <div className="flex-shrink-0 w-10 overflow-hidden border rounded-md shadow-sm h-14 border-border">
+                                                    <motion.img
+                                                        whileHover={{ scale: 1.15 }}
                                                         className="object-cover w-full h-full"
                                                         src={
                                                             film.poster_image
@@ -208,51 +273,65 @@ export default function Index({ films, filters }: Props) {
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-sm font-medium whitespace-nowrap">
-                                            <div className="flex space-x-2">
-                                                <Link
-                                                    href={route('admin.films.show', { film: film.id })}
-                                                    className="transition text-primary hover:text-primary/80"
-                                                    title="View"
-                                                    aria-label={`View details for ${film.title}`}
-                                                >
-                                                    <EyeIcon className="w-5 h-5" />
-                                                </Link>
-                                                <Link
-                                                    href={route('admin.films.edit', { film: film.id })}
-                                                    className="transition text-warning hover:text-warning/80"
-                                                    title="Edit"
-                                                    aria-label={`Edit ${film.title}`}
-                                                >
-                                                    <PencilIcon className="w-5 h-5" />
-                                                </Link>
-                                                <button
-                                                    onClick={() => openDeleteModal(film)}
-                                                    className="transition text-destructive hover:text-destructive/80"
-                                                    title="Delete"
-                                                    aria-label={`Delete ${film.title}`}
-                                                >
-                                                    <TrashIcon className="w-5 h-5" />
-                                                </button>
+                                            <div className="flex space-x-3">
+                                                <motion.div whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}>
+                                                    <Link
+                                                        href={route('admin.films.show', { film: film.id })}
+                                                        className="transition text-primary hover:text-primary/80"
+                                                        title="View"
+                                                        aria-label={`View details for ${film.title}`}
+                                                    >
+                                                        <EyeIcon className="w-5 h-5" />
+                                                    </Link>
+                                                </motion.div>
+                                                <motion.div whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}>
+                                                    <Link
+                                                        href={route('admin.films.edit', { film: film.id })}
+                                                        className="transition text-warning hover:text-warning/80"
+                                                        title="Edit"
+                                                        aria-label={`Edit ${film.title}`}
+                                                    >
+                                                        <PencilIcon className="w-5 h-5" />
+                                                    </Link>
+                                                </motion.div>
+                                                <motion.div whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }}>
+                                                    <button
+                                                        onClick={() => openDeleteModal(film)}
+                                                        className="transition text-destructive hover:text-destructive/80"
+                                                        title="Delete"
+                                                        aria-label={`Delete ${film.title}`}
+                                                    >
+                                                        <TrashIcon className="w-5 h-5" />
+                                                    </button>
+                                                </motion.div>
                                             </div>
                                         </td>
-                                    </tr>
+                                    </motion.tr>
                                 ))
                             ) : (
                                 <tr>
                                     <td colSpan={7} className="px-6 py-12 text-center">
                                         <div className="flex flex-col items-center justify-center">
-                                            <FilmIcon className="w-12 h-12 mb-4 text-muted-foreground" />
-                                            <p className="mb-4 text-sm text-muted-foreground">No films found matching your search criteria.</p>
-                                            {data.search && (
-                                                <button
-                                                    onClick={() => {
-                                                        setData('search', '');
-                                                        get(route('admin.films.index'), { preserveState: true });
-                                                    }}
-                                                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition rounded-md bg-primary hover:bg-primary/90 focus:ring-primary/30 focus:ring-2 focus:outline-none"
+                                            <FilmIcon className="w-12 h-12 mb-3 text-muted-foreground" />
+                                            <h3 className="mb-1 text-lg font-medium text-foreground">No films found</h3>
+                                            <p className="text-sm text-muted-foreground">
+                                                {data.search
+                                                    ? 'Try changing your search query'
+                                                    : 'Get started by adding your first film'}
+                                            </p>
+                                            {!data.search && (
+                                                <motion.div
+                                                    className="mt-4"
+                                                    whileHover={{ scale: 1.05 }}
+                                                    whileTap={{ scale: 0.95 }}
                                                 >
-                                                    Clear Search
-                                                </button>
+                                                    <Link
+                                                        href={route('admin.films.create')}
+                                                        className="inline-flex items-center px-4 py-2 text-sm font-medium text-white transition rounded-md shadow-sm bg-primary hover:bg-primary/90 focus:ring-primary/30 focus:ring-2 focus:outline-none"
+                                                    >
+                                                        Add New Film
+                                                    </Link>
+                                                </motion.div>
                                             )}
                                         </div>
                                     </td>
@@ -261,48 +340,39 @@ export default function Index({ films, filters }: Props) {
                         </tbody>
                     </table>
                 </div>
-            </div>
+            </motion.div>
 
             {/* Pagination */}
             {films.data.length > 0 && (
-                <div className="mt-6">
-                    <Pagination links={films.links} currentPage={films.current_page} totalPages={films.last_page} />
-                </div>
+                <motion.div
+                    className="flex items-center justify-between mt-6"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                    <div className="flex items-center text-sm text-muted-foreground">
+                        Showing <span className="mx-1 font-medium">{(films.current_page - 1) * 15 + 1}</span>
+                        to <span className="mx-1 font-medium">{Math.min(films.current_page * 15, films.total)}</span>
+                        of <span className="mx-1 font-medium">{films.total}</span> films
+                    </div>
+                    <Pagination
+                        links={films.links}
+                        currentPage={films.current_page}
+                        totalPages={films.last_page}
+                    />
+                </motion.div>
             )}
 
             {/* Delete Confirmation Modal */}
-            {isDeleteModalOpen && filmToDelete && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-                    <div className="w-full max-w-md p-6 rounded-lg shadow-lg bg-card">
-                        <div className="flex items-center mb-4">
-                            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-destructive/10 text-destructive">
-                                <TrashIcon className="w-5 h-5" />
-                            </div>
-                            <h3 className="ml-3 text-lg font-medium text-foreground">Delete Film</h3>
-                        </div>
-
-                        <p className="mb-6 text-muted-foreground">
-                            Are you sure you want to delete <span className="font-semibold">{filmToDelete.title}</span>? This action cannot be undone,
-                            and will also delete all associated screenings and reservations.
-                        </p>
-
-                        <div className="flex justify-end space-x-3">
-                            <button
-                                onClick={closeDeleteModal}
-                                className="px-4 py-2 text-sm font-medium border rounded-md border-border text-foreground hover:bg-muted focus:outline-none"
-                            >
-                                Cancel
-                            </button>
-                            <button
-                                onClick={confirmDelete}
-                                className="px-4 py-2 text-sm font-medium rounded-md bg-destructive hover:bg-destructive/90 text-destructive-foreground focus:outline-none"
-                            >
-                                Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            <DeletePopup
+                isOpen={isDeleteModalOpen}
+                onClose={closeDeleteModal}
+                onDelete={confirmDelete}
+                title="Delete Film"
+                itemName={filmToDelete?.title}
+                description="Are you sure you want to delete {itemName}? This action cannot be undone and will remove all screenings and reservations associated with this film."
+                processing={processing}
+            />
         </AdminLayout>
     );
 }
