@@ -1,7 +1,8 @@
 <?php
 
-return [
+use Illuminate\Support\ServiceProvider;
 
+return [
     /*
     |--------------------------------------------------------------------------
     | Application Name
@@ -134,7 +135,7 @@ return [
     |
     */
 
-    'providers' => [
+    'providers' => ServiceProvider::defaultProviders()->merge([
         // Laravel Framework Service Providers...
         Illuminate\Auth\AuthServiceProvider::class,
         Illuminate\Broadcasting\BroadcastServiceProvider::class,
@@ -165,9 +166,10 @@ return [
 
         // Application Service Providers...
         App\Providers\AppServiceProvider::class,
-        App\Providers\RouteServiceProvider::class,
         App\Providers\ImageServiceProvider::class,
-    ],
+        App\Providers\KafkaServiceProvider::class,
+        App\Providers\RouteServiceProvider::class,
+    ])->toArray(),
 
     'aliases' => [
         // ...existing aliases...

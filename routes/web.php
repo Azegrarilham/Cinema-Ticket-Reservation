@@ -100,6 +100,8 @@ Route::middleware(['web', \App\Http\Middleware\EnsureUserIsClient::class])->grou
             ->name('account.reservations');
         Route::get('/account/reservations/{reservation}', [ReservationController::class, 'show'])
             ->name('account.reservations.show');
+        Route::post('/account/reservations/{reservation}/cancel', [ReservationController::class, 'cancelReservation'])
+            ->name('account.reservations.cancel');
     });
 });
 

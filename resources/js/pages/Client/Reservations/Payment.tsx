@@ -48,6 +48,7 @@ interface Reservation {
     guest_email?: string;
     guest_phone?: string;
     status: 'pending' | 'confirmed' | 'cancelled';
+    minutes_left?: number;
 }
 
 interface PaymentProps {
@@ -238,6 +239,22 @@ export default function Payment({ reservation }: PaymentProps) {
                                     </div>
                                 </div>
                             </div>
+
+                            {reservation.minutes_left !== undefined && (
+                                <div className="p-4 mt-4 text-sm text-red-300 border rounded-xl border-red-500/20 bg-red-900/10">
+                                    <div className="flex">
+                                        <ClockIcon className="flex-shrink-0 w-5 h-5 text-red-400" />
+                                        <div className="ml-3">
+                                            <p>
+                                                <span className="font-bold">Time remaining: {reservation.minutes_left.toFixed(2)} minutes</span>
+                                            </p>
+                                            <p className="mt-1">
+                                                Your reservation will be automatically cancelled if payment is not completed within the time limit.
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
                         </motion.div>
 
                         {/* Payment Form */}
@@ -260,8 +277,8 @@ export default function Payment({ reservation }: PaymentProps) {
                                     <div className="grid grid-cols-2 gap-4 mb-6">
                                         <div
                                             className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border border-neutral-600 p-4 transition-colors ${paymentMethod === 'credit_card'
-                                                    ? 'border-red-500 bg-red-500/10'
-                                                    : 'hover:border-white/50 hover:bg-neutral-700/30'
+                                                ? 'border-red-500 bg-red-500/10'
+                                                : 'hover:border-white/50 hover:bg-neutral-700/30'
                                                 }`}
                                             onClick={() => setPaymentMethod('credit_card')}
                                         >
@@ -276,8 +293,8 @@ export default function Payment({ reservation }: PaymentProps) {
 
                                         <div
                                             className={`flex cursor-pointer flex-col items-center justify-center rounded-lg border border-neutral-600 p-4 transition-colors ${paymentMethod === 'paypal'
-                                                    ? 'border-red-500 bg-red-500/10'
-                                                    : 'hover:border-white/50 hover:bg-neutral-700/30'
+                                                ? 'border-red-500 bg-red-500/10'
+                                                : 'hover:border-white/50 hover:bg-neutral-700/30'
                                                 }`}
                                             onClick={() => setPaymentMethod('paypal')}
                                         >

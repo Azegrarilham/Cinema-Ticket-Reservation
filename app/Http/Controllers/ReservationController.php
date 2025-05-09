@@ -113,6 +113,20 @@ class ReservationController extends Controller
         $totalPrice = $reservation->reservationSeats->sum('price');
         $reservation->total_price = $totalPrice;
 
+        // Calculate expiration time (15 minutes from creation)
+        $expirationTime = $reservation->created_at->addMinutes(15);
+        $now = Carbon::now();
+        $minutesLeft = $now->diffInMinutes($expirationTime, false);
+
+        // If the reservation has already expired, redirect to films page
+        if ($minutesLeft <= 0) {
+            // The scheduled task will handle the actual cancellation
+            return redirect()->route('films.index')
+                ->with('error', 'Your reservation has expired. Please make a new reservation.');
+        }
+
+        $reservation->minutes_left = $minutesLeft;
+
         return Inertia::render('Client/Reservations/Payment', [
             'reservation' => $reservation,
         ]);
@@ -376,5 +390,33 @@ class ReservationController extends Controller
 
         // Stream the PDF directly to the browser without Inertia/Axios
         return $pdf->stream('ticket-' . $reservation->confirmation_code . '.pdf');
+    }
+
+    /**
+     * Cancel a reservation.
+     */
+    public function cancelReservation(Reservation $reservation)
+    {
+        // Check if the reservation belongs to the authenticated user
+        if (Auth::id() !== $reservation->user_id) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        // Check if the reservation can be cancelled (only pending reservations can be cancelled)
+        if ($reservation->status !== 'pending') {
+            return back()->with('error', 'Only pending reservations can be cancelled.');
+        }
+
+        // Update reservation status to cancelled
+        $reservation->update([
+            'status' => 'cancelled',
+        ]);
+
+        // Update seat status back to available
+        $seatIds = $reservation->reservationSeats->pluck('seat_id');
+        Seat::whereIn('id', $seatIds)->update(['status' => 'available']);
+
+        return redirect()->route('account.reservations')
+            ->with('success', 'Reservation cancelled successfully.');
     }
 }

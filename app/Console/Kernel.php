@@ -8,6 +8,7 @@ use App\Console\Commands\ListTables;
 use App\Console\Commands\OptimizeSqliteDatabase;
 use App\Console\Commands\CreateAdminUser;
 use App\Console\Commands\UpdateReservationConfirmationCodes;
+use App\Console\Commands\CancelAbandonedReservations;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
 
@@ -25,6 +26,10 @@ class Kernel extends ConsoleKernel
         OptimizeSqliteDatabase::class,
         CreateAdminUser::class,
         UpdateReservationConfirmationCodes::class,
+        Commands\KafkaConsumerCommand::class,
+        Commands\StartKafkaConsumers::class,
+        Commands\TestKafkaPublish::class,
+        CancelAbandonedReservations::class,
     ];
 
     /**
@@ -33,6 +38,9 @@ class Kernel extends ConsoleKernel
     protected function schedule(Schedule $schedule): void
     {
         // $schedule->command('inspire')->hourly();
+
+        // Cancel abandoned reservations every 5 minutes
+        $schedule->command('reservations:cancel-abandoned')->everyFiveMinutes();
     }
 
     /**

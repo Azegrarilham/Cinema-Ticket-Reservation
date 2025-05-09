@@ -181,12 +181,37 @@ export default function Reservations({ user, reservations = [] }: Props) {
                                                             <p className="text-sm font-medium text-white">
                                                                 Total: ${formatPrice(reservation)}
                                                             </p>
-                                                            <Link
-                                                                href={route('account.reservations.show', reservation.id)}
-                                                                className="inline-flex items-center px-3 py-1 text-xs font-medium text-white transition-colors rounded-md bg-primary hover:bg-primary/90"
-                                                            >
-                                                                View Details
-                                                            </Link>
+                                                            <div className="flex space-x-2">
+                                                                {reservation.status === 'pending' && (
+                                                                    <Link
+                                                                        href={route('account.reservations.cancel', reservation.id)}
+                                                                        method="post"
+                                                                        as="button"
+                                                                        className="inline-flex items-center px-3 py-1 text-xs font-medium text-white transition-colors rounded-md bg-red-600 hover:bg-red-700"
+                                                                        onClick={(e) => {
+                                                                            if (!confirm('Are you sure you want to cancel this reservation?')) {
+                                                                                e.preventDefault();
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        Cancel
+                                                                    </Link>
+                                                                )}
+                                                                <Link
+                                                                    href={route(
+                                                                        reservation.status === 'pending'
+                                                                            ? 'reservations.payment'
+                                                                            : 'account.reservations.show',
+                                                                        reservation.id
+                                                                    )}
+                                                                    className={`inline-flex items-center px-3 py-1 text-xs font-medium text-white transition-colors rounded-md ${reservation.status === 'pending'
+                                                                        ? 'bg-yellow-600 hover:bg-yellow-700'
+                                                                        : 'bg-primary hover:bg-primary/90'
+                                                                        }`}
+                                                                >
+                                                                    {reservation.status === 'pending' ? 'Process Payment' : 'View Details'}
+                                                                </Link>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -214,4 +239,3 @@ export default function Reservations({ user, reservations = [] }: Props) {
         </ClientLayout>
     );
 }
-
