@@ -8,18 +8,9 @@ use Illuminate\Support\Str;
 
 class UpdateReservationConfirmationCodes extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
+
     protected $signature = 'reservations:update-codes';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Update confirmation codes for existing reservations';
 
     /**

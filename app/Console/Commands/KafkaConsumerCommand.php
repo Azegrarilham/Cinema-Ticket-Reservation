@@ -6,8 +6,10 @@ use App\Services\ConsumerService;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Log;
 
+//handles message processing from Kafka topics in your Cinema Ticket Reservation system.
 class KafkaConsumerCommand extends Command
 {
+    //This command listens to various Kafka topics and processes messages related to reservations, payments, and seat management.
     protected $signature = 'kafka:consume {topic}';
     protected $description = 'Start a Kafka consumer for the specified topic';
 

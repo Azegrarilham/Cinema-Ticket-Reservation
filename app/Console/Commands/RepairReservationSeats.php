@@ -10,18 +10,9 @@ use Illuminate\Support\Facades\DB;
 
 class RepairReservationSeats extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
+    // This is a maintenance/repair command for fixing issues with reservation seats in Ticket Reservation system.
     protected $signature = 'app:repair-reservation-seats {reservation? : The ID of the specific reservation to repair} {--force : Force repair even if seats already exist}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Repairs missing reservation seats by linking reserved seats to their reservations';
 
     /**

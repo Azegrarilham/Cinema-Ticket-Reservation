@@ -47,7 +47,7 @@ interface Reservation {
     guest_name?: string;
     guest_email?: string;
     guest_phone?: string;
-    status: 'pending' | 'confirmed' | 'cancelled';
+    status: 'pending' | 'confirmed' | 'cancelled'; 
     minutes_left?: number;
 }
 

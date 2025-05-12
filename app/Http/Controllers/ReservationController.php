@@ -113,8 +113,8 @@ class ReservationController extends Controller
         $totalPrice = $reservation->reservationSeats->sum('price');
         $reservation->total_price = $totalPrice;
 
-        // Calculate expiration time (15 minutes from creation)
-        $expirationTime = $reservation->created_at->addMinutes(15);
+        // Calculate expiration time (it assigned 10 minutes from now) you can change it in config/app.php
+        $expirationTime = $reservation->created_at->addMinutes(config('app.reservation_timeout'));
         $now = Carbon::now();
         $minutesLeft = $now->diffInMinutes($expirationTime, false);
 

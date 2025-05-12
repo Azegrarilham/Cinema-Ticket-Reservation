@@ -8,18 +8,10 @@ use Illuminate\Console\Command;
 
 class RepairScreeningSeats extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
+    // This command is used to repair screenings with missing seat allocations.
+    // It checks if screenings have the correct number of seats and repairs them if necessary.
     protected $signature = 'screenings:repair-seats {--screening_id= : Repair a specific screening ID}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
     protected $description = 'Repair screenings with missing seat allocations';
 
     /**

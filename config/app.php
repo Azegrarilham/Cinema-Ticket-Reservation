@@ -175,4 +175,8 @@ return [
         // ...existing aliases...
         'Image' => Intervention\Image\Facades\Image::class,
     ],
+
+    //seting up the reservation timeout
+    'reservation_timeout' => env('RESERVATION_TIMEOUT_MINUTES', 10),
+
 ];

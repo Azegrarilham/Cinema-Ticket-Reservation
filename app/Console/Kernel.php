@@ -37,9 +37,7 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        // $schedule->command('inspire')->hourly();
-
-        // Cancel abandoned reservations every 5 minutes
+        // Schedule the command to run every 5 minutes
         $schedule->command('reservations:cancel-abandoned')->everyFiveMinutes();
     }
 

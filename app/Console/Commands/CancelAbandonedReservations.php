@@ -10,26 +10,20 @@ use Illuminate\Support\Facades\Log;
 
 class CancelAbandonedReservations extends Command
 {
-    /**
-     * The name and signature of the console command.
-     *
-     * @var string
-     */
-    protected $signature = 'reservations:cancel-abandoned {--minutes=15 : Minutes after which pending reservations are considered abandoned}';
+    //the command to check for abandoned reservations
+    //and cancel them if they are older than the specified time
+    protected $signature = 'reservations:cancel-abandoned {--minutes= : Minutes after which pending reservations are considered abandoned}';
 
-    /**
-     * The console command description.
-     *
-     * @var string
-     */
+
+   // a description of the command
     protected $description = 'Cancel abandoned pending reservations';
 
     /**
-     * Execute the console command.
+     * Execute the console command. every 5 minutes you can set the time in the karnel.php file
      */
     public function handle()
     {
-        $minutes = $this->option('minutes');
+        $minutes = $this->option('minutes')?? config('app.reservation_timeout');// default to the reservation timeout in the config file
         $cutoffTime = Carbon::now()->subMinutes($minutes);
 
         $this->info("Checking for reservations abandoned before {$cutoffTime}...");
