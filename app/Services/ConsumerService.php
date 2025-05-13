@@ -124,6 +124,9 @@ class ConsumerService
                 $seat = $reservationSeat->seat;
                 $seat->status = 'available';
                 $seat->save();
+
+                // Delete the reservation seat
+                $reservationSeat->delete();
             }
 
             $reservation->status = 'cancelled';

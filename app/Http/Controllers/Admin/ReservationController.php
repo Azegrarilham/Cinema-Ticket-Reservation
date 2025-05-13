@@ -206,17 +206,21 @@ class ReservationController extends Controller
 
         $previousStatus = $reservation->status;
 
-        $reservation->update([
-            'status' => $validated['status'],
-        ]);
-
-        // If cancelled, update seat status back to available
+        // If cancelled, update seat status back to available and delete reservation seats
         if ($validated['status'] === 'cancelled') {
             $seatIds = $reservation->reservationSeats->pluck('seat_id');
 
+            // Delete the reservation seats first
+            $reservation->reservationSeats()->delete();
+
+            // Then update the seats to available
             \App\Models\Seat::whereIn('id', $seatIds)
                 ->update(['status' => 'available']);
         }
+
+        $reservation->update([
+            'status' => $validated['status'],
+        ]);
 
         // If status changed to confirmed, send confirmation email with ticket
         if ($validated['status'] === 'confirmed' && $previousStatus !== 'confirmed') {
@@ -250,12 +254,17 @@ class ReservationController extends Controller
      */
     public function destroy(Reservation $reservation)
     {
-        // Free up the seats
+        // Get the seat IDs before deletion
         $seatIds = $reservation->reservationSeats->pluck('seat_id');
 
+        // Delete all reservation seats
+        $reservation->reservationSeats()->delete();
+
+        // Free up the seats
         \App\Models\Seat::whereIn('id', $seatIds)
             ->update(['status' => 'available']);
 
+        // Finally delete the reservation
         $reservation->delete();
 
         return redirect()->route('admin.reservations.index')

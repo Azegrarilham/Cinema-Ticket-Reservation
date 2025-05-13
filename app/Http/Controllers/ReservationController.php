@@ -407,14 +407,19 @@ class ReservationController extends Controller
             return back()->with('error', 'Only pending reservations can be cancelled.');
         }
 
+        // Get the seat IDs before deleting the reservation seats
+        $seatIds = $reservation->reservationSeats->pluck('seat_id');
+
+        // Delete all reservation seats
+        $reservation->reservationSeats()->delete();
+
+        // Update seat status back to available
+        Seat::whereIn('id', $seatIds)->update(['status' => 'available']);
+
         // Update reservation status to cancelled
         $reservation->update([
             'status' => 'cancelled',
         ]);
-
-        // Update seat status back to available
-        $seatIds = $reservation->reservationSeats->pluck('seat_id');
-        Seat::whereIn('id', $seatIds)->update(['status' => 'available']);
 
         return redirect()->route('account.reservations')
             ->with('success', 'Reservation cancelled successfully.');

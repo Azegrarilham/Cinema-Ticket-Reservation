@@ -42,6 +42,7 @@ interface FilmsProps {
 export default function Index({ films, genres, filters }: FilmsProps) {
     const [search, setSearch] = useState(filters.search || '');
     const [selectedGenre, setSelectedGenre] = useState(filters.genre || '');
+    const [currentPage, setCurrentPage] = useState(films.current_page);
     const [scrollY, setScrollY] = useState(0);
 
     // Animation hooks with reduced reflow triggers
@@ -50,6 +51,11 @@ export default function Index({ films, genres, filters }: FilmsProps) {
         threshold: 0.1,
         rootMargin: '50px'
     });
+
+    // Update current page when films prop changes
+    useEffect(() => {
+        setCurrentPage(films.current_page);
+    }, [films.current_page]);
 
     // Debounced scroll handler
     useEffect(() => {
@@ -71,13 +77,17 @@ export default function Index({ films, genres, filters }: FilmsProps) {
         const debounceTimer = setTimeout(() => {
             router.get(
                 '/films',
-                { search, genre: selectedGenre },
+                {
+                    search,
+                    genre: selectedGenre,
+                    page: search || selectedGenre ? 1 : currentPage // Reset to page 1 only when filters change
+                },
                 { preserveState: true, replace: true }
             );
         }, 300);
 
         return () => clearTimeout(debounceTimer);
-    }, [search, selectedGenre]);
+    }, [search, selectedGenre, currentPage]);
 
     // Simplified animation variants
     const containerVariants = {
