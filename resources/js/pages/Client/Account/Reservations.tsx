@@ -66,6 +66,9 @@ export default function Reservations({ user, reservations = [] }: Props) {
         return '0.00';
     };
 
+    // Filter out canceled reservations
+    const activeReservations = reservations.filter(reservation => reservation.status !== 'cancelled');
+
     // Handle case where user might be undefined
     if (!user) {
         return (
@@ -141,9 +144,9 @@ export default function Reservations({ user, reservations = [] }: Props) {
                             <div className="p-6 border rounded-xl border-neutral-700 bg-neutral-800/50">
                                 <h2 className="mb-6 text-2xl font-semibold text-white">Your Cinema Reservations</h2>
 
-                                {reservations.length > 0 ? (
+                                {activeReservations.length > 0 ? (
                                     <div className="space-y-4">
-                                        {reservations.map((reservation) => (
+                                        {activeReservations.map((reservation) => (
                                             <div
                                                 key={reservation.id}
                                                 className="p-4 transition-colors border rounded-lg border-neutral-700 hover:bg-neutral-700/30"

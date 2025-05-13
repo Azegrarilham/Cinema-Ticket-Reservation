@@ -59,7 +59,7 @@ export default function Index({ admins }: Props) {
                 className="grid grid-cols-1 gap-6 md:grid-cols-2"
             >
                 <motion.div variants={itemVariants}>
-                    <Card className="p-6 shadow-sm bg-card">
+                    <Card className="p-6 shadow-sm bg-card dark:bg-card">
                         <div className="flex items-center mb-4">
                             <UserPlusIcon className="w-6 h-6 mr-2 text-primary" />
                             <h2 className="text-lg font-semibold">Add New Admin</h2>
@@ -132,7 +132,7 @@ export default function Index({ admins }: Props) {
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
-                    <Card className="p-6 shadow-sm bg-card">
+                    <Card className="p-6 shadow-sm bg-card dark:bg-card">
                         <div className="flex items-center mb-4">
                             <UserIcon className="w-6 h-6 mr-2 text-primary" />
                             <h2 className="text-lg font-semibold">Admins</h2>
@@ -140,9 +140,9 @@ export default function Index({ admins }: Props) {
 
                         <div className="space-y-4">
                             {admins.length > 0 ? (
-                                <div className="border rounded-md">
+                                <div className="border rounded-md dark:border-border">
                                     <table className="min-w-full divide-y divide-border">
-                                        <thead className="bg-muted/50">
+                                        <thead className="bg-muted/50 dark:bg-muted/20">
                                             <tr>
                                                 <th scope="col" className="px-4 py-3.5 text-left text-sm font-semibold">
                                                     Name
@@ -163,6 +163,7 @@ export default function Index({ admins }: Props) {
                                                     animate={{ opacity: 1 }}
                                                     transition={{ duration: 0.3 }}
                                                     whileHover={{ backgroundColor: 'rgba(0,0,0,0.02)' }}
+                                                    className="dark:hover:bg-muted/10"
                                                 >
                                                     <td className="px-4 py-4 whitespace-nowrap">
                                                         <div className="flex items-center">
