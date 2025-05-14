@@ -177,6 +177,6 @@ return [
     ],
 
     //seting up the reservation timeout
-    'reservation_timeout' => env('RESERVATION_TIMEOUT_MINUTES', 10),
+    'reservation_timeout' => env('RESERVATION_TIMEOUT_MINUTES', 2),
 
 ];

@@ -36,10 +36,11 @@ class Kernel extends ConsoleKernel
      * Define the application's command schedule.
      */
     protected function schedule(Schedule $schedule): void
-    {    // php artisan reservations:cancel-abandoned
-        //php artisan schedule:work -v
+    {
+        //run php artisan schedule:work -v
+        //if it didn't work run .\run-scheduler.ps1
         // Schedule the command to run every 5 minutes
-        $schedule->command('reservations:cancel-abandoned')->everyFiveMinutes();
+        $schedule->command('reservations:cancel-abandoned')->everyMinute();
     }
 
     /**
