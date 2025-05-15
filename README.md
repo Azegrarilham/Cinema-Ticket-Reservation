@@ -180,6 +180,3 @@ The project includes detailed documentation in the following files:
 ```
 ## for more previews
    check ./screenshots
-## License
-
-This project is licensed under the MIT License.
