@@ -1,4 +1,5 @@
 # Cinema Ticket Reservation System
+![Image](screenshots/client/client.png)
 
 A modern web-based cinema ticket reservation system built with Laravel and React, featuring real-time event processing with Apache Kafka.
 
@@ -177,7 +178,5 @@ The project includes detailed documentation in the following files:
 ├── routes/
 └── tests/
 ```
-
-## License
-
-This project is licensed under the MIT License.
+## for more previews
+   check ./screenshots
